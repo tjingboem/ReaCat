@@ -65,6 +65,7 @@ points
 | `name` | all | What it is within that source ("RAND", "x", "Gate"). `source` + `name` is the **link key**. |
 | `saved` | all | When the entry was first made (`YYYY-MM-DD HH:MM:SS`, local time). |
 | `sent` | all | When it was last sent. A send of identical content (same `hash`) only updates this line. **Newest = highest `sent`.** |
+| `npoints` | curve (set by `send`) | How many points the body holds (so a listing can say it without reading the points). |
 | `beats` | curve (optional) | The length of the curve in beats, if the sender knows it. A receiver may use it or ignore it. |
 | `range` | curve (optional) | `lo,hi`: what 0 and 1 stood for at the sender (e.g. the pitch range of a walk). The catalogue never applies it; a receiver may offer "Original range" (section 7). |
 | `unit` | curve (optional) | A word for the values (information). |

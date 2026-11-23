@@ -58,6 +58,7 @@ local e = Cat.get(id1)
 check("get: source/name", e and e.source == "ReaNvelopes" and e.name == "RAND")
 check("get: 4 points", e and #e.points == 4)
 check("get: shape and handles", e and e.points[1].shape == 2 and e.points[3].shape == 5 and same(e.points[3].c1, 0.4) and same(e.points[3].c2, 0.6))
+check("npoints is stored and listed (a listing does not read the points)", e and e.npoints == 4 and Cat.list()[1].npoints == 4)
 check("get: beats / range / unit", e and e.beats == 16 and e.range[1] == -20 and e.range[2] == 20 and e.unit == "x")
 check("get: note with a line end survives", e and e.note == "first idea\nsecond line", e and e.note)
 local tagset = {}

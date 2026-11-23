@@ -3,6 +3,7 @@
 -- Copies that do not exist yet are skipped; add a path to COPIES when a tool gets its own.
 local COPIES = {
   { "lib/ReaCat.lua", "../ReaNvelopes/lib/ReaCat.lua" },
+  { "lib/ReaCat.lua", "../ReaAC/core/ReaCat.lua" },
 }
 local function read(p) local f = io.open(p, "rb") if not f then return nil end local s = f:read("a") f:close() return s end
 local bad = 0
