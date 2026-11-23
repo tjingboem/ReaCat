@@ -23,6 +23,14 @@ local C = {
   dim = 0x9AA4AEFF, err = 0xFF7070FF, ok = 0x70D090FF, ruletext = 0xC8B8F0FF, fav = 0xFFD040FF, amber = 0xA86A00FF, amberOn = 0xD98C00FF,
 }
 
+-- a tag is a small button with round ends (a pill)
+local function pill(ctx, label)
+  R.ImGui_PushStyleVar(ctx, R.ImGui_StyleVar_FrameRounding(), 10)
+  local clicked = R.ImGui_SmallButton(ctx, label)
+  R.ImGui_PopStyleVar(ctx)
+  return clicked
+end
+
 local DATE_ITEMS = "All dates\0Today\0Last 7 days\0Last 30 days\0Range\0"
 local SORT_ITEMS = "Newest first\0Oldest first\0By source\0"
 local HINT = "search: lorenz AND smooth NOT step   (tag:  source:  name:  note:  \"phrase\"  brackets)"
@@ -193,7 +201,7 @@ local function chipsRow(ctx, st)
     local on = st.query:find(needle, 1, true) ~= nil
     local tint = t.project and (on and C.amberOn or C.amber) or (on and 0x2E6BA8FF) or nil
     if tint then R.ImGui_PushStyleColor(ctx, R.ImGui_Col_Button(), tint) end
-    if R.ImGui_SmallButton(ctx, label .. "##chip" .. i) then
+    if pill(ctx, label .. "##chip" .. i) then
       if on then
         local a, b = st.query:find(needle, 1, true)
         st.query = (st.query:sub(1, a - 1) .. st.query:sub(b + 1)):gsub("%s+", " "):gsub("^%s+", ""):gsub("%s+$", "")
@@ -261,7 +269,7 @@ local function infoPanel(ctx, st, opts, shown, h)
   local function projectChip()
     if shown.project and shown.project ~= "" then
       R.ImGui_PushStyleColor(ctx, R.ImGui_Col_Button(), C.amber)
-      if R.ImGui_SmallButton(ctx, shown.project .. "##proj") then
+      if pill(ctx, shown.project .. "##proj") then
         local needle = 'tag:"' .. shown.project .. '"'
         if not st.query:find(needle, 1, true) then st.query = (st.query ~= "" and (st.query .. " ") or "") .. needle st.dirty = true end
       end
@@ -281,7 +289,7 @@ local function infoPanel(ctx, st, opts, shown, h)
         if used + cw + 4 > avail then used = 0 else R.ImGui_SameLine(ctx, 0, 4) end
       end
       used = used + cw + 4
-      if R.ImGui_SmallButton(ctx, label .. "##rm" .. i) then
+      if pill(ctx, label .. "##rm" .. i) then
         for _, id in ipairs(tagTargets(st)) do Cat.update(id, { removetags = { t } }) end
         st.dirty = true
       end
@@ -305,7 +313,7 @@ local function infoPanel(ctx, st, opts, shown, h)
         local tl = t.tag:lower()
         if not have[tl] and tl:sub(1, #low) == low and n < 6 then
           R.ImGui_SameLine(ctx, 0, 4)
-          if R.ImGui_SmallButton(ctx, t.tag .. "##sug" .. k) then
+          if pill(ctx, t.tag .. "##sug" .. k) then
             for _, id in ipairs(targets) do Cat.update(id, { addtags = { t.tag } }) end
             st.tagInput, st.dirty = "", true
           end

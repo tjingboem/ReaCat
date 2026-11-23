@@ -31,3 +31,10 @@ window, the migration order). Decisions are marked in section 10 of the spec.
   not removable, kept when the same thing is sent again, shown in AMBER (chips and the info panel). `tag:"name"`, `project:part` and plain words find it. `ReaCat.projectName()`.
   The name is looked up with `GetProjectName(0)`; in the test REAPER it is always "Unsaved Project". Not tried with a saved project in his REAPER.
 - Thumbnails 96 x 54 (were 120 x 68), the label under them is "name  source". Tag chips in the info panel wrap.
+
+## Migration step 4a: ReaNvelopes sends (23 Nov 2026) — built, tested offline and in a REAPER of its own, NOT yet used by tjingboem
+- ReaNvelopes OUTPUT target 4 is now "Send to ReaCat and the world" (button "SEND TO REACAT"): `ReaNvelopes/lib/ReaCatSend.lua` fits the curve with `CurveShare`, stores it with
+  `ReaCat.send` (source "ReaNvelopes", name RAND / OSC / DRAW, project tag, shape word). TEMPORARY: it also writes the old one-slot place, so ReaMaskM / ReaShapeM "Take Curve"
+  keep working until step 5; then `CurveShare.send` and `CurveShare.lua` go (step 6). `ReaNvelopes/lib/ReaCat.lua` is an identical copy (`lua5.4 tests/check_copies.lua`).
+- Tests in ReaNvelopes: `lua5.4 tests/test_reacat_send.lua` (14 checks), `tests/hub_smoke.lua` (15, real hub in a REAPER of its own, still passes).
+- Tags in the picker are pills (rounded). Next: `CurveUI.draw` (the nine ReaAC editors), MinervaCL Editors, then the receivers.
