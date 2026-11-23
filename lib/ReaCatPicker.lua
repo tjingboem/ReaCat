@@ -582,7 +582,7 @@ function P.draw(ctx, st, opts)
 
   -- the grid takes what the panel and the bottom line leave
   local panelH = opts.panelH or (opts.browser and 250 or 196)   -- the browser also lists where an entry is used
-  local bottomH = opts.browser and 34 or 0
+  local bottomH = opts.browser and 58 or 0
   local used = select(2, R.ImGui_GetContentRegionAvail(ctx))
   local gridH = opts.gridH or math.max(80, (opts.height and math.min(opts.height, used) or used) - panelH - bottomH - 12)
   local taken = grid(ctx, st, opts, gridH)
@@ -604,6 +604,10 @@ function P.draw(ctx, st, opts)
       R.ImGui_SameLine(ctx, 0, 12)
       R.ImGui_TextColored(ctx, C.ok, st.msg)
     end
+    -- the setting of ReaCat.markItem: besides the line in the item's notes, the curve's name is added to the item's name (off by default)
+    local suffixOn = Cat.nameSuffixOn()
+    local sch, sv = R.ImGui_Checkbox(ctx, "Also add the curve to the item's name when a tool uses it on an item##namesuffix", suffixOn)
+    if sch then Cat.setNameSuffixOn(sv) end
   end
   return taken
 end
