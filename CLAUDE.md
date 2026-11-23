@@ -30,7 +30,7 @@ window, the migration order). Decisions are marked in section 10 of the spec.
 - Every send writes the REAPER project name (without .RPP; "Unsaved Project" when the project has no file yet) as the header key `project=`: a FIXED tag, not in `tags`,
   not removable, kept when the same thing is sent again, shown in AMBER (chips and the info panel). `tag:"name"`, `project:part` and plain words find it. `ReaCat.projectName()`.
   The name is looked up with `GetProjectName(0)`; in the test REAPER it is always "Unsaved Project". Not tried with a saved project in his REAPER.
-- Thumbnails 96 x 54 (were 120 x 68), the label under them is "name  source". Tag chips in the info panel wrap.
+- Thumbnails 96 x 54 (were 120 x 68), the label under them is "source name" (the source gives way when the room is short, so the name stays readable). Tag chips in the info panel wrap.
 
 ## Migration step 4a: ReaNvelopes sends (23 Nov 2026) — built, tested offline and in a REAPER of its own, NOT yet used by tjingboem
 - ReaNvelopes OUTPUT target 4 is now "Send to ReaCat and the world" (button "SEND TO REACAT"): `ReaNvelopes/lib/ReaCatSend.lua` fits the curve with `CurveShare`, stores it with

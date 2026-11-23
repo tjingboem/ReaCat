@@ -184,6 +184,15 @@ local function shorten(s, maxChars)
   return s:sub(1, math.max(1, maxChars - 1)) .. "…"
 end
 
+-- "Lorenz Attractor x": the module (the source) first, then the name. When the room is short the source gives way, so that
+-- the name (the x, y, z of an attractor) always stays readable.
+function P.label(e, maxChars)
+  local name = shorten(e.name, math.max(3, math.floor(maxChars * 0.6)))
+  local room = maxChars - (utf8.len(name) or #name) - 1
+  if room < 4 then return name end
+  return shorten(e.source, room) .. " " .. name
+end
+
 -- ---------------------------------------------------------------- small controls
 
 local function chipsRow(ctx, st)
@@ -421,7 +430,7 @@ local function grid(ctx, st, opts, h)
       if hovered then st.hover, border = e, C.hover end
       P.picture(dl, x, y, tw, th, full(st, e.id), border)
       if e.fav then R.ImGui_DrawList_AddText(dl, x + tw - 14, y + 2, C.fav, "*") end
-      R.ImGui_DrawList_AddText(dl, x + 2, y + th + 1, C.dim, shorten(e.name .. "  " .. e.source, math.floor(tw / 7)))
+      R.ImGui_DrawList_AddText(dl, x + 2, y + th + 1, C.dim, P.label(e, math.floor(tw / 7)))
       if hovered then
         if opts.browser and R.ImGui_IsMouseDoubleClicked(ctx, 0) then
           P._sendAgain(st, e)
