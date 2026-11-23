@@ -173,6 +173,25 @@ check("the search used: lists only the used", #st.list >= 1 and (function() for 
 st.query, st.dirty = "", true
 P._refresh(st, {})
 
+-- the order of the tag chips: the project tags first, then the rest; each group by count, ties alphabetically
+Cat.send{ source = "Zed", name = "z", points = line, tags = "aaa", projectid = "P2", project = "Second Project" }
+st.dirty = true
+P._refresh(st, {})
+local seenOther, projectsFirst = false, true
+for _, t in ipairs(st.tags) do
+  if t.project and seenOther then projectsFirst = false end
+  if not t.project then seenOther = true end
+end
+check("tag chips: the project tags come first", projectsFirst and st.tags[1].project == true, st.tags[1].tag)
+local okOrder = true
+local lastCount, lastProject
+for _, t in ipairs(st.tags) do
+  if lastProject == (t.project and true or false) and lastCount and t.count > lastCount then okOrder = false end
+  lastCount, lastProject = t.count, (t.project and true or false)
+end
+check("and inside each group the most used come first", okOrder)
+check("every tag is in the list (no limit of 40)", (function() local n = 0 for _ in pairs(st.tags) do n = n + 1 end return n >= 5 end)())
+
 -- the label under a thumbnail: the module first, the name always readable
 check("label: module first, then the name", P.label({ source = "Lorenz Attractor", name = "x" }, 13) == "Lorenz Att… x", P.label({ source = "Lorenz Attractor", name = "x" }, 13))
 check("label: a short source stays whole", P.label({ source = "Sieve", name = "Gate" }, 13) == "Sieve Gate")

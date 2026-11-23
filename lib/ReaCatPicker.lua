@@ -117,7 +117,12 @@ local function refresh(st, opts)
   st.list = out
   local tags = {}
   for k, c in pairs(counts) do tags[#tags + 1] = { tag = spelling[k], count = c, project = projects[k] or nil } end
-  table.sort(tags, function(a, b) if a.count ~= b.count then return a.count > b.count end return a.tag:lower() < b.tag:lower() end)
+  -- the amber project tags first, then everything else; each group by the number of curves, ties alphabetically (capitals ignored)
+  table.sort(tags, function(a, b)
+    if (a.project and 1 or 0) ~= (b.project and 1 or 0) then return a.project and true or false end
+    if a.count ~= b.count then return a.count > b.count end
+    return a.tag:lower() < b.tag:lower()
+  end)
   st.tags = tags
 end
 
@@ -202,35 +207,48 @@ end
 
 -- ---------------------------------------------------------------- small controls
 
+-- The tags: two lines high, and as wide as they need, with a HORIZONTAL scrollbar. Each tag goes at the end of the shorter of the two lines, so the most used
+-- (and the amber project tags) stand at the left and the two lines stay about equally long. The mouse wheel scrolls sideways while the pointer is over the tags;
+-- Home takes it back to the start.
 local function chipsRow(ctx, st)
-  local avail = R.ImGui_GetContentRegionAvail(ctx)
-  local used = 0
+  local line = R.ImGui_GetTextLineHeight(ctx) + 7                      -- the distance between the two lines
+  local barH = R.ImGui_GetStyleVar(ctx, R.ImGui_StyleVar_ScrollbarSize())
+  local childH = 2 * line + barH + 6
+  if not R.ImGui_BeginChild(ctx, "##tags", 0, childH, R.ImGui_ChildFlags_None(), R.ImGui_WindowFlags_HorizontalScrollbar()) then return end
+  if R.ImGui_IsWindowHovered(ctx) and not R.ImGui_IsAnyItemActive(ctx) then
+    local wheel = R.ImGui_GetMouseWheel(ctx)
+    if wheel ~= 0 then R.ImGui_SetScrollX(ctx, R.ImGui_GetScrollX(ctx) - wheel * 80) end
+    if R.ImGui_IsKeyPressed(ctx, R.ImGui_Key_Home(), false) then R.ImGui_SetScrollX(ctx, 0) end
+  end
+  local padX = R.ImGui_GetStyleVar(ctx, R.ImGui_StyleVar_FramePadding())
+  local rowEnd = { 0, 0 }
   local shown = 0
   for i, t in ipairs(st.tags) do
-    if shown >= 40 then break end
     local label = t.tag .. " " .. t.count
-    local w = R.ImGui_CalcTextSize(ctx, label) + 14
-    if used > 0 then
-      if used + w + 4 > avail then used = 0 else R.ImGui_SameLine(ctx, 0, 4) end
-    end
+    local w = R.ImGui_CalcTextSize(ctx, label) + 2 * padX
+    local r = (rowEnd[1] <= rowEnd[2]) and 1 or 2
+    R.ImGui_SetCursorPos(ctx, rowEnd[r], (r - 1) * line)
     local needle = 'tag:"' .. t.tag .. '"'
     local on = st.query:find(needle, 1, true) ~= nil
     local tint = t.project and (on and C.amberOn or C.amber) or (on and 0x2E6BA8FF) or nil
     if tint then R.ImGui_PushStyleColor(ctx, R.ImGui_Col_Button(), tint) end
     if pill(ctx, label .. "##chip" .. i) then
       if on then
-        local a, b = st.query:find(needle, 1, true)
-        st.query = (st.query:sub(1, a - 1) .. st.query:sub(b + 1)):gsub("%s+", " "):gsub("^%s+", ""):gsub("%s+$", "")
+        local x1, x2 = st.query:find(needle, 1, true)
+        st.query = (st.query:sub(1, x1 - 1) .. st.query:sub(x2 + 1)):gsub("%s+", " "):gsub("^%s+", ""):gsub("%s+$", "")
       else
         st.query = (st.query ~= "" and (st.query .. " ") or "") .. needle
       end
       st.dirty = true
     end
     if tint then R.ImGui_PopStyleColor(ctx) end
-    used = used + w + 4
+    rowEnd[r] = rowEnd[r] + w + 4
     shown = shown + 1
   end
   if shown == 0 then R.ImGui_TextColored(ctx, C.dim, "no tags yet") end
+  R.ImGui_SetCursorPos(ctx, math.max(rowEnd[1], rowEnd[2]), 0)          -- the width of the content, for the scrollbar
+  R.ImGui_Dummy(ctx, 1, 1)
+  R.ImGui_EndChild(ctx)
 end
 
 local function selectedIds(st)

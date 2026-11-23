@@ -84,7 +84,7 @@ h2("The parts of the window")
 table(["Part", "What it does"], [
     ["Search box", "Type words to find curves. It understands AND, OR, NOT, brackets, quotes and field searches (3.2). A search that cannot be read is shown in red under the box and does not filter the list."],
     ["Date and sort", "The list can show all dates, today, the last 7 or 30 days, or a range you type as YYYY-MM-DD. It can be sorted newest first, oldest first, or by tool. The date is the day the curve was last sent."],
-    ["Tags", "Every tag in the catalogue, with how many curves have it. A click adds the tag to the search, another click takes it out. The tag with the name of a project is amber."],
+    ["Tags", "Every tag in the catalogue, with how many curves have it, in two lines that scroll sideways: turn the mouse wheel over them, and press Home to go back to the start. The tags with the name of a project come first and are amber, then the others, the most used first. A click adds the tag to the search, another click takes it out."],
     ["Pictures", "Each curve drawn small, with its tool and name under it, for example Lorenz Attractor x. A rule (the text that Markov, Xenakis Sieve and GA Rhythm send) is drawn as a small box with its text."],
     ["Information", "Hover a picture, or select it, to see the large picture, the dates, the number of points, the range of the curve, its tags and note, and where it is used."],
     ["Bottom line", "The cleanup limit, Undo delete, messages, and the setting for item names (6.3)."],
