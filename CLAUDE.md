@@ -93,3 +93,5 @@ The tags of the window are in a child of two lines with a HORIZONTAL scrollbar: 
 
 ## ReaMaskM sends too: one dropdown (23 Nov 2026) — see ReaMaskM/CLAUDE.md
 `ReaCatPicker.takeLatest(opts)` and `ReaCatPicker.popup(ctx, st, popupId, opts)` were added for a tool that has a menu of its own instead of the two buttons of `receiver` (ReaMaskM: one dropdown under the preset name with Latest / Open ReaCat / Send to ReaCat and the world). The picker tests pass 54. Copies updated everywhere.
+
+ReaShapeM has the same one dropdown and a Send for its selected envelope (23 Nov 2026), see ReaShapeM/CLAUDE.md.
