@@ -72,6 +72,7 @@ points
 | `note` | all (optional) | One free text. |
 | `fav` | all (optional) | `1` = the user marked it; a cleanup never proposes to delete it. |
 | `rulekind` | rule | `value` or `rhythm` (MinervaCL: where the rule can go). |
+| `seq` | all (optional) | The send counter (the `stamp` of section 4) at the moment of the send. It orders sends within one second: newest = highest `sent`, then highest `seq`. |
 | `hash` | all | A short checksum of kind + body (not of the header). Used to avoid storing the same thing twice. |
 
 ### 3.3 Body of a `curve`
@@ -101,8 +102,12 @@ ExtState section `ReaCat` (not persistent; the files are):
 
 ## 5. The shared lib `ReaCat.lua`
 
+**The core is pure Lua, no ReaImGui** (decided 23 Nov 2026): the format, this lib and its tests need no GUI, so a tool that only sends loads no GUI code and the
+lib is tested outside REAPER. Only the picker widget and the ReaCat window (sections 7 and 8) use ReaImGui, which every tool of the family already requires,
+and they live in separate files.
+
 One small file, **an identical copy in every tool** (the family copies shared files; a test compares the copies). It needs only `reaper.*`
-(`GetResourcePath`, `RecursiveCreateDirectory`, `GetExtState`, `SetExtState`) and `os`/`io`. It never uses `load()` on file text.
+(`GetResourcePath`, `RecursiveCreateDirectory`, `EnumerateFiles`, `GetExtState`, `SetExtState`) and `os`/`io`. It never uses `load()` on file text.
 
 ```
 ReaCat.send{ kind="curve", source=, name=, points=, beats=, range=, unit=, tags=, note= }  ->  id | nil, message
