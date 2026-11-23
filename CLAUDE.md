@@ -55,3 +55,7 @@ NEXT: step 2 (a write also files a copy in ReaCat; "Latest" and "ReaCat..." in M
 - A write also files a copy (tag `written`, marked used): ReaNvelopes `OutputPanel` (CC, note values, both envelope writers; `ReaCatSend.fileWritten`) and ReaAC `CurveUI.commit` (CC, velocity, envelope; `Series.fileWritten`); the item gets the notes line. `CurveOut.commitEnvelope` in ReaAC returns env and aiIdx as 6th and 7th value.
 - Tests: picker logic 46, ReaAC selftest_athenacl 115, smoke_all_modules 26, ReaAC selftest_written 10, ReaNvelopes selftest_written 11 + hub_smoke 15, test_reaac_series 35.
 - NOT done yet: ReaMaskM and ReaShapeM "Take Curve" (they still read the old one-slot place, which ReaNvelopes still writes); MinervaCL's own outputs; ReaCat red borders (step 3); ReaSnap (steps 4, 5).
+
+## Step 2 finished (23 Nov 2026): ReaMaskM and ReaShapeM take curves from ReaCat — tested in a REAPER of its own, NOT used by tjingboem, NOT committed
+`ReaCatPicker.receiver` got `opts.popup` (the picker in a popup of its own), `opts.buttonH`, `opts.noRange` (hide "Original range": those two tools lay the curve over the whole envelope). ReaMaskM and ReaShapeM have copies of `ReaCat.lua` and `ReaCatPicker.lua` next to their script (`tests/check_copies.lua` lists all seven copies) and keep the old button as a fallback. Live copies are updated.
+The old one-slot place (`CurveShare.lua`, `tjingboem_curve/current`) can go now: step 6 of the plan (still written by ReaNvelopes' send; the fallbacks in ReaMaskM and ReaShapeM would go with it).

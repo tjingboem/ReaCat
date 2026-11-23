@@ -77,6 +77,7 @@ reaper.defer(loop3)
 -- the receiver buttons (Latest / ReaCat...) with the picker open, as a tool draws them inside a popup-like window
 local ctx4 = reaper.ImGui_CreateContext("ReaCat receiver test")
 local st4 = Picker.new()
+local st5, frames4 = Picker.new(), 0
 st4.rOpen = true
 local took
 local function loop4()
@@ -87,6 +88,12 @@ local function loop4()
     reaper.ImGui_Text(ctx4, "Take a curve or a rule")
     local t = Picker.receiver(ctx4, st4, { accept = function(e) return e.kind == "curve" end, acceptKey = "smoke" })
     if t then took = t end
+    reaper.ImGui_Separator(ctx4)
+    -- the same buttons with the picker in a popup (a narrow tool window), opened by the test at frame 30
+    frames4 = (frames4 or 0) + 1
+    if frames4 == 30 then reaper.ImGui_OpenPopup(ctx4, "##smokepop") st5.rOpen = true end
+    local t2 = Picker.receiver(ctx4, st5, { kind = "curve", popup = "##smokepop", width = 600, noRange = true, buttonH = 24 })
+    if t2 then took = t2 end
     reaper.ImGui_End(ctx4)
   end
   if open then reaper.defer(loop4) end

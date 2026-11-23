@@ -258,7 +258,7 @@ local function infoPanel(ctx, st, opts, shown, h)
   -- under the picture: what 0 and 1 stood for, and the Original range choice
   if shown.range then
     R.ImGui_TextColored(ctx, C.dim, string.format("0 = %.6g, 1 = %.6g %s", shown.range[1], shown.range[2], shown.unit or ""))
-    if not opts.browser then
+    if not opts.browser and not opts.noRange then
       local ch, v = R.ImGui_Checkbox(ctx, "Original range##orig", st.useRange)
       if ch then st.useRange = v end
     end
@@ -591,29 +591,44 @@ end
 function P.receiver(ctx, st, opts)
   opts = opts or {}
   local taken
-  if R.ImGui_Button(ctx, "Latest##rclatest", 80, 0) then
+  local bh = opts.buttonH or 0
+  if R.ImGui_Button(ctx, "Latest##rclatest", 80, bh) then
     local h = P.latest(opts)
     local e = h and Cat.get(h.id)
     if e then taken = { id = h.id, entry = e, originalRange = false, how = "latest" } st.rOpen, st.rmsg = false, nil
     else st.rmsg = "nothing to take yet" end
   end
   R.ImGui_SameLine(ctx, 0, 6)
-  local on = st.rOpen
+  local on = st.rOpen and not opts.popup
   if on then R.ImGui_PushStyleColor(ctx, R.ImGui_Col_Button(), 0x2E6BA8FF) end
-  if R.ImGui_Button(ctx, "ReaCat...##rcopen", 90, 0) then st.rOpen, st.rmsg = not st.rOpen, nil end
+  if R.ImGui_Button(ctx, "ReaCat...##rcopen", 90, bh) then
+    st.rmsg = nil
+    if opts.popup then R.ImGui_OpenPopup(ctx, opts.popup) st.rOpen = true else st.rOpen = not st.rOpen end
+  end
   if on then R.ImGui_PopStyleColor(ctx) end
   if st.rmsg then
     R.ImGui_SameLine(ctx, 0, 10)
     R.ImGui_TextColored(ctx, C.dim, st.rmsg)
   end
-  if st.rOpen then
+  local drawOpts = { kind = opts.kind, rulekind = opts.rulekind, accept = opts.accept, acceptKey = opts.acceptKey,
+                     gridH = opts.gridH or 230, panelH = opts.panelH, noRange = opts.noRange }
+  local function pick()
     R.ImGui_Dummy(ctx, opts.width or 680, 1)
-    local t = P.draw(ctx, st, { kind = opts.kind, rulekind = opts.rulekind, accept = opts.accept, acceptKey = opts.acceptKey,
-                                gridH = opts.gridH or 230, panelH = opts.panelH })
+    local t = P.draw(ctx, st, drawOpts)
     if t then
       local e = Cat.get(t.id)
       if e then taken = { id = t.id, entry = e, originalRange = t.originalRange, how = "picked" } st.rOpen = false end
     end
+  end
+  if opts.popup then
+    -- the picker in a popup of its own (for a tool whose window is too narrow to hold it)
+    if R.ImGui_BeginPopup(ctx, opts.popup) then
+      pick()
+      if taken then R.ImGui_CloseCurrentPopup(ctx) end
+      R.ImGui_EndPopup(ctx)
+    end
+  elseif st.rOpen then
+    pick()
   end
   return taken
 end
