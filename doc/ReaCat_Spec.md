@@ -139,6 +139,10 @@ ReaCat.tags()            -> every tag in the catalogue with its count (for the s
 - ReaAC: `CurveUI.draw`'s sendName target (about 20 modules; the nine "editors" first), the module's curves normalised 0..1 as now, `range` carries the original range
   where the module knows it. Rules of Sieve, Markov and GA Rhythm go as `kind=rule`.
 - MinervaCL: the Editors and the strips send a parameter's curve (the values the strip draws, normalised to the parameter's range, `range` set).
+  **Built 23 Nov 2026**: alongside every curve, "Send to ReaCat and the world" now also sends each parameter's and the Rhythm tab's own athenaCL rule text
+  (`kind=rule`, `rulekind=value` or `rhythm`) — the same text its Text view shows, real athenaCL syntax, not a translation. Unlike Sieve/Markov/GA Rhythm
+  (which synthesise an athenaCL-equivalent rule from their own simpler controls), MinervaCL's rule text is already real athenaCL, so a later import (by
+  MinervaCL itself, or anything else that reads a `rule`) gets back a genuine generator, not a frozen curve.
 - Any future script: call `ReaCat.send` and show the message. Nothing else.
 
 ## 7. Receiving: one picker everywhere
