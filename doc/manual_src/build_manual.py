@@ -125,6 +125,8 @@ h2("From ReaNvelopes")
 p("In the OUTPUT section of RAND, OSC or DRAW choose the target **Send to ReaCat and the world**. The button reads **SEND TO REACAT**. The curve goes as the preview shows it, with Flip X and Flip Y applied, with only as many points as its shape needs. It is named ReaNvelopes, then RAND, OSC or DRAW. No time selection, lane or item is needed.")
 h2("From the ReaAC modules")
 p("Every module of ReaAC that has an Output section has the Target **Send to ReaCat and the world**. With it **Insert to Project** sends all the curves of the module, each as its own curve, named after the module and the curve: the Lorenz module sends Lorenz Attractor x, y and z, Discrete Map sends x and y, Cellular Automata sends Density and Position, and so on. The values are between 0 and 1, as every curve in the catalogue is. Markov, Xenakis Sieve and GA Rhythm also send rules, the text of the same idea in athenaCL's language, for the MinervaCL module.")
+h2("From ReaMaskM and ReaShapeM")
+p("The dropdown **ReaCat** of ReaMaskM and ReaShapeM also sends: **Send to ReaCat and the world** puts the selected envelope in the catalogue as a curve, named ReaMaskM or ReaShapeM and the envelope, for example Pitch: Min Pitch or Time: Warp, and tagged with its group. The envelope fills the whole width and the whole height of the curve, as in the window. In ReaShapeM the time runs over the notes that you selected. An envelope with curved segments or Bezier points is sent in small steps, so that it keeps its shape. So a shape that you made in one of these tools can be used in MinervaCL, in the other of the two, or in any tool that takes curves.")
 h2("What a tool writes into the project")
 p("When a tool writes a curve into your project, as an automation item, as MIDI CC or pitch bend, or as note values, it also files a copy in the catalogue, tagged **written**, and marks it as used by the item or the automation item it went to (6). So everything that reached your project is in the catalogue too, ready to be used somewhere else, for example to open a filter or to make a note structure. If filing the copy fails, the write itself is not affected.")
 h2("Sending twice")
@@ -132,7 +134,7 @@ p("The same curve from the same tool and the same name is stored once. Sending i
 
 h1("Taking curves")
 h2("Latest and ReaCat...")
-p("Every tool that takes curves has the same two buttons.")
+p("Every tool that takes curves offers the same two ways: two buttons, or, in ReaMaskM and ReaShapeM, two entries of one dropdown (5.3).")
 bullets([
     "**Latest** takes the newest curve that the tool can use, from any tool. Use it when you have just sent a curve and want it at once. The tool shows what it took, for example: took Lorenz Attractor x (Night Piece).",
     "**ReaCat...** opens the catalogue as pictures, with search, tags and dates, in a window of its own or under the buttons. A click on a picture takes that curve, also when a newer one with the same name exists.",
@@ -140,7 +142,7 @@ bullets([
 h2("MinervaCL")
 p("In the MinervaCL module the **Import** button of every parameter, and of the Rhythm tab, opens a window with **Points**, **Low** and **High**, the choice **As Draw** or **As Choose**, the box **Linked**, and the two buttons. A curve becomes a Draw or a Choose of the parameter, scaled between Low and High (they start at the limits of the parameter). A rule of the right kind is kept as the Text of the parameter, and a rhythm rule becomes the rhythm of the layer. The details are in the MinervaCL chapter of the ReaAC manual (Import).")
 h2("ReaMaskM and ReaShapeM")
-p("In ReaMaskM and ReaShapeM the old button Take Curve from ReaNvelopes has become **Latest** and **ReaCat...**. Choose the envelope that should receive the curve first. The curve replaces that envelope. It covers its whole width and its whole height: the bottom of the envelope is 0 and the top is 1, exactly as the curve is in the catalogue. What the values mean is up to you. ReaCat... opens the catalogue in a small window.")
+p("In ReaMaskM and ReaShapeM the old button Take Curve from ReaNvelopes has become one dropdown, **ReaCat**. In ReaMaskM it stands under the preset name and the Save button, in the style of the BPM Grid dropdown. In ReaShapeM it stands in the bottom left corner, on the row of the steps. Its entries are **Latest**, **Open ReaCat** (the catalogue in a small window) and **Send to ReaCat and the world** (4.3). Choose the envelope that should receive the curve first. The curve replaces that envelope. It covers its whole width and its whole height: the bottom of the envelope is 0 and the top is 1, exactly as the curve is in the catalogue. What the values mean is up to you. A short message beside or under the dropdown says what happened.")
 h2("Original range")
 p("A curve in the catalogue is always between 0 and 1. Some tools also say what 0 and 1 stood for where the curve was made, for example the lowest and the highest pitch of a random walk. When you pick such a curve in MinervaCL, the box **Original range** appears: ticked, Low and High become that range instead of the limits of the parameter. ReaMaskM and ReaShapeM do not offer it, because a curve always covers the whole envelope there.")
 
