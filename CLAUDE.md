@@ -38,3 +38,8 @@ window, the migration order). Decisions are marked in section 10 of the spec.
   keep working until step 5; then `CurveShare.send` and `CurveShare.lua` go (step 6). `ReaNvelopes/lib/ReaCat.lua` is an identical copy (`lua5.4 tests/check_copies.lua`).
 - Tests in ReaNvelopes: `lua5.4 tests/test_reacat_send.lua` (14 checks), `tests/hub_smoke.lua` (15, real hub in a REAPER of its own, still passes).
 - Tags in the picker are pills (rounded). Next: `CurveUI.draw` (the nine ReaAC editors), MinervaCL Editors, then the receivers.
+
+## Design of 23 Nov 2026 (late): provenance, "used" borders, snapshots — see spec section 11. Nothing built yet.
+Decided by tjingboem: Option A for snapshots (with a hidden project ID next to the visible amber name), every write also files a copy in ReaCat, usage shown as a red border + a list in the info panel + click to select the item,
+item NOTES for the item side with a setting "also add to the item name" (off by default), receivers get "Latest" (newest of the kind, any source) and "ReaCat..." (the picker as a popup).
+Not yet confirmed: the embedded popup (vs the real ReaCat window) and the "Open the ReaCat window" button; the second border colour for "used in another project".

@@ -219,3 +219,40 @@ Each step: tested offline first, then by him in REAPER; commit and push only on 
 - **Fixed tag: the project name (decided 23 Nov 2026, tjingboem), amber; "Unsaved Project" when not saved yet.** Thumbnails smaller (96 x 54, were 120 x 68) so more fit.
 - ~~Tags as typed or lower-cased~~ **Decided 23 Nov 2026: as typed** (compared without case). He also asked for **boolean search**, see section 8.1.
 - Do other kinds follow (a note series, a pattern)? The `kind` key leaves room; none is specified now.
+
+## 11. Provenance, "used" borders and snapshots (DESIGN decided 23 Nov 2026, tjingboem — nothing built yet)
+
+His idea: show in ReaCat which envelopes are used in the project, and let ReaSnap bring the catalogue entries of a project back. "Just thinking about what kind of system we can build via ReaSnap."
+
+### 11.1 Decisions
+- **Snapshots: Option A.** A ReaSnap Capture stores the catalogue entries of the project; Restore puts back the missing ones (11.5).
+- **The project gets a hidden ID** next to the visible name (the name is not unique: every unsaved project is "Unsaved Project"). A GUID-like string made once per project and kept in the project's own ExtState (`SetProjExtState`, section `ReaCat`, key `projectid`). Every send writes it as the header key `projectid=` (not shown, not a tag). The amber name stays what the user sees.
+- **A write also files a copy in ReaCat.** "Write to envelope", "Write MIDI" and "Set note values" (ReaNvelopes, `CurveUI.commit`, MinervaCL's outputs) put the curve they wrote into the catalogue too (tag `written`; same duplicate check by hash), and mark it as used at once. Reason (his words): he intends to re-use an envelope for opening a filter, generating a note structure and more, so everything that reaches the project should be in the catalogue. The cleanup limit and the duplicate check contain the growth.
+- **Item side: item NOTES (B), with a setting "also add to the item name", off by default.** Each place that takes or writes an entry adds one clean line to the item's notes: `ReaCat: <source> <name>, taken <date time>, project <name>`. With the setting on, the name also gets the suffix ` + ReaCat: <source> <name>` (his item names already read "... + ReaShapeM"). Automation items have no name or notes field: for them the information is only in the usage record and in ReaCat's panel.
+
+### 11.2 The usage record (stored in the project, needs no ReaSnap)
+Every receiver and every write adds a line to the project's ExtState (section `ReaCat`, key `usage`, saved with the project):
+`<hash>|<what>|<guid>|<tool>|<label>|<date time>`  — `hash` = the entry's content hash (so a reference survives a restore, another machine and a re-added entry), `what` = item / automation item / parameter, `guid` = the item's GUID when there is one, `tool` = who took it, `label` = a short words for the panel.
+One entry can be used in several places (a filter, a note structure, ...): several lines with the same hash. A line whose item is gone is stale: ReaCat checks that the item still exists before it shows the line.
+
+### 11.3 In ReaCat
+- A **red border** on an entry that is used in the open project (a second colour for "used in another project", to be chosen).
+- The info panel lists where it is used ("item ReaMaskM 22 Nov 14:45 on track 3", "automation item ReaNvelopes RAND ...") and **a click selects that item** in REAPER.
+- Search: `used:` finds the used ones; `NOT used:` the others. Cleanup proposes the never-used, oldest entries first.
+
+### 11.4 Receivers: two buttons (decided: "Latest" = yes)
+- **Latest**: one click takes the newest entry of the right kind (`kind`, `rulekind`), from any source. It says what it took ("took Lorenz Attractor x (Night Piece)").
+- **ReaCat...**: opens the picker (11.3's widget) as a popup inside the receiver; a click takes the entry. (Proposed, not yet confirmed: an "Open the ReaCat window" button in that popup when ReaSnap can launch it.)
+- A receiver records the usage line (11.2) and the notes line (11.1) when it takes an entry.
+
+### 11.5 ReaSnap
+- ReaCat becomes a ReaSnap member as far as the integration contract fits: window title with the instance number (piece 2), Close All (piece 5), single instance, a Launcher button. No settings are written onto an item (pieces 3 and 4 do not apply).
+- **Capture** stores the entries with the project's `projectid`; **Restore** adds the ones that are missing (same hash = not added twice) through a lib function that keeps the original id, dates, tags, note and `projectid` (`ReaCat.restore(text)`, to write). The usage lines are in the project already, so the red borders come back by themselves.
+
+### 11.6 Order of work
+1. Lib: `projectid`, `restore`, the usage record and its reader (offline tests).
+2. A write also files its copy; the receivers' "Latest" and "ReaCat..." buttons, which record usage and notes (MinervaCL Import first, then ReaMaskM and ReaShapeM Take Curve).
+3. ReaCat: red borders, the info panel list, click to select, `used:` search, cleanup order.
+4. ReaCat as a ReaSnap member.
+5. Capture and Restore of the entries.
+Each step: offline tests, then a REAPER of its own, then his own trying; commit and push on his word.
