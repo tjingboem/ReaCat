@@ -43,3 +43,8 @@ window, the migration order). Decisions are marked in section 10 of the spec.
 Decided by tjingboem: Option A for snapshots (with a hidden project ID next to the visible amber name), every write also files a copy in ReaCat, usage shown as a red border + a list in the info panel + click to select the item,
 item NOTES for the item side with a setting "also add to the item name" (off by default), receivers get "Latest" (newest of the kind, any source) and "ReaCat..." (the picker as a popup).
 Not yet confirmed: the embedded popup (vs the real ReaCat window) and the "Open the ReaCat window" button; the second border colour for "used in another project".
+
+## Step 1 of spec section 11 built (23 Nov 2026): the lib — tested offline (61 checks in `tests/test_reacat_provenance.lua`), NOT yet used by any tool
+`projectId`, `restore`, `export` / `exportProject`, the usage record (`useAdd`, `usage`, `usedHashes`, `usedBy`, `usePrune`), the item side (`noteWith`, `nameWith`, `markItem`, the name-suffix setting), the search word `used:`.
+Details and the one thing to remember (a reference is the content hash, so identical content under other names is "used" too) are in spec 11.7. The copies of `lib/ReaCat.lua` in ReaNvelopes and ReaAC are updated (identical).
+NEXT: step 2 (a write also files a copy in ReaCat; "Latest" and "ReaCat..." in MinervaCL Import, ReaMaskM / ReaShapeM Take Curve; they call `markItem`).

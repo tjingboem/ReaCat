@@ -256,3 +256,12 @@ One entry can be used in several places (a filter, a note structure, ...): sever
 4. ReaCat as a ReaSnap member.
 5. Capture and Restore of the entries.
 Each step: offline tests, then a REAPER of its own, then his own trying; commit and push on his word.
+
+### 11.7 Step 1 built (23 Nov 2026): the lib
+`ReaCat.projectId()` (made once, kept in the project's ExtState, written as the header key `projectid=` by every send; nil when REAPER cannot say); `ReaCat.newId()`; `ReaCat.export(id)` and `ReaCat.exportProject(projectid)`
+(what a snapshot stores); `ReaCat.restore(id, text)` (puts an entry back as it was, never as the newest; same content = "exists"; a taken id or a bad id gets a new one; refuses broken text and another major version);
+the usage record `ReaCat.useAdd / usage / usedHashes / usedBy / usePrune` (project ExtState `ReaCat/usage`, at most 2000 lines, characters % ; | and line ends escaped; every change bumps the edit counter so open windows refresh);
+the item side `ReaCat.noteWith / nameWith` (pure) and `ReaCat.markItem(item, entry, { tool =, nameSuffix = })` (usage line + the notes line + the name suffix when the setting is on; `ReaCat.nameSuffixOn / setNameSuffixOn`, persistent, off by default);
+the search word `used:` (alone: used in this project; `NOT used:` the others).
+**The reference is the CONTENT hash** (the points, or the rule text): two entries with identical content under different names are the same thing, so both get the red border when one is used. That follows from referencing by hash (a reference survives a restore
+and another machine); it is not a bug. Tests: `tests/test_reacat_provenance.lua` (61 checks). Not built yet: steps 2 to 5.
