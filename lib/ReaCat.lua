@@ -351,6 +351,20 @@ end
 
 -- ---------------------------------------------------------------- sending
 
+-- Make an entry the newest without copying anything: "sent" and "seq" move, the stamp goes up (a click in the ReaCat
+-- window, or the same content sent again). Returns the id, or nil and the reason.
+function M.touch(id)
+  local e, err = M.get(id)
+  if not e then return nil, err end
+  e.sent = os.date("%Y-%m-%d %H:%M:%S")
+  e.seq = (tonumber(M.stamp()) or 0) + 1
+  local ok, werr = writeFile(pathOf(id), serialize(e))
+  if not ok then return nil, "could not write the catalogue: " .. tostring(werr) end
+  reaper.SetExtState(SECTION, "last", id, false)
+  bump("stamp")
+  return id
+end
+
 function M.send(t)
   if type(t) ~= "table" then return nil, "nothing to send" end
   local kind = t.kind or "curve"
@@ -394,15 +408,7 @@ function M.send(t)
 
   for _, h in ipairs(M.list()) do                      -- the same thing again: only "sent" moves
     if h.hash == e.hash and h.source == source and h.name == name and h.kind == kind then
-      local old, err = M.get(h.id)
-      if not old then return nil, err end
-      old.sent = now
-      old.seq = (tonumber(M.stamp()) or 0) + 1
-      local ok, werr = writeFile(pathOf(h.id), serialize(old))
-      if not ok then return nil, "could not write the catalogue: " .. tostring(werr) end
-      reaper.SetExtState(SECTION, "last", h.id, false)
-      bump("stamp")
-      return h.id
+      return M.touch(h.id)
     end
   end
 

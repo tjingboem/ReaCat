@@ -233,6 +233,16 @@ check("list with a query", #hit == 1 and hit[1].id == idR)
 local both = Cat.list{ query = Cat.query("reanvelopes OR sieve") }
 check("list with OR", #both >= 2)
 
+-- ------------------------------------------------ touch: a click in the window makes an entry the newest
+local others = Cat.list{ query = Cat.query("tag:rule") }
+local old1 = Cat.list()[#Cat.list()].id          -- the oldest entry
+local stBefore = Cat.stamp()
+check("touch ok", Cat.touch(old1) == old1)
+check("touch makes it the newest", Cat.list()[1].id == old1 and Cat.last() == old1)
+check("touch moves the stamp", Cat.stamp() ~= stBefore)
+check("touch keeps the content", #Cat.get(old1).points >= 2)
+check("touch of nothing", select(1, Cat.touch("nope")) == nil)
+
 -- ------------------------------------------------ clean up the scratch folder and report
 os.execute("rm -rf '" .. root .. "'")
 print(string.format("%d checks passed, %d failed", passed, failed))

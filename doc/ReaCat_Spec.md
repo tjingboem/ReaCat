@@ -116,6 +116,7 @@ ReaCat.list(filter)      -> array of headers, newest first   (cheap: reads the h
 ReaCat.get(id)           -> entry with points / text
 ReaCat.newest(source, name)  -> id | nil                (what a link follows)
 ReaCat.query(text)       -> match(header) function | nil, problem   (the boolean search, 8.1)
+ReaCat.touch(id)         -> id | nil, message     (make an entry the newest without copying anything)
 ReaCat.stamp()           -> string
 ReaCat.update(id, {tags=, addtags=, removetags=, note=, fav=})   (addtags / removetags: lists; adds are deduplicated without case)
 ReaCat.tags()            -> every tag in the catalogue with its count (for the suggestions)
@@ -140,7 +141,8 @@ ReaCat.tags()            -> every tag in the catalogue with its count (for the s
 
 ## 7. Receiving: one picker everywhere
 
-- A shared widget (`ReaCatPicker`, in ReaCat's lib, also a copy per tool) lists the catalogue as thumbnails; the thumbnail is **drawn from the points** (no stored picture, so
+- A shared widget (`lib/ReaCatPicker.lua`, ReaImGui; `Picker.new()`, then `Picker.draw(ctx, st, { height = 420 })` every frame returns nil or `{ id =, originalRange = }`;
+  `opts.kind` / `opts.rulekind` limit what is listed; `browser = true` is the ReaCat window; also a copy per tool) lists the catalogue as thumbnails; the thumbnail is **drawn from the points** (no stored picture, so
   the small and the big picture are both sharp), 68 x 38 as in MinervaCL's presets; hover shows the big picture with source, name, date and tags **on screen** (no tooltip;
   his rule); search by date, tags (AND, click to combine) and text; click = take it.
 - A receiver turns the points into what it needs: ReaMaskM / ReaShapeM lay them over the whole X and Y of their envelope (as Take Curve does now);
@@ -162,7 +164,9 @@ A window of its own (`ReaCat.lua`), pin / window place / one window as the other
 - **Cleanup suggestion**: when the catalogue holds more entries than the user's limit, ReaCat shows a line "N entries (limit L): clean up?" which opens the list of
   the oldest entries without `fav` to choose from. The limit is **an option the user can change** in ReaCat's window (a number; **default 2000**; `0` = never suggest).
   Stored in ExtState section `ReaCat`, key `cleanup_after`, persistent. Nothing is deleted without the user's click, and deleted entries go to `_trash/`.
-- Hover: information and tags. Click: take it (as the current "newest": it only moves `sent`; nothing is copied). Shift+click: edit tags and note.
+- Hover: information and tags in the panel under the grid. **In the ReaCat window (built 23 Nov 2026, changed from the first draft): click = look at it and edit its tags (a plain click must not
+  reorder the list), double-click = send it again (it becomes the newest: it only moves `sent` and `seq`, nothing is copied; `ReaCat.touch`), Ctrl+click = select several, right-click = delete.**
+  In a receiver's picker: click = take it, Shift+click = look at it and edit.
   **Tags can be added (and removed) at any time, also long after the send:** the editor has an "add tag" field that suggests the tags already in the catalogue as you type;
   with several entries ticked (Ctrl+click) one tag can be added to, or removed from, all of them at once. Automatic tags can be removed too. The same "add tag" is in the
   picker's hover panel, so a receiver can tag an entry right after taking it ("this one worked for the bridge"). An edit rewrites the file in place (same id, same `saved`; `sent` is not changed)

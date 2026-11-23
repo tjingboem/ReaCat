@@ -1,0 +1,27 @@
+# ReaCat — working notes
+
+Started 23 November 2026 by tjingboem. The catalogue of envelopes for the whole family: every script that makes a curve "sends to ReaCat and the
+world", every script that needs a curve takes one from the catalogue. **Read `doc/ReaCat_Spec.md` first** (format "ReaCat 1", the shelf lib, the picker, the
+window, the migration order). Decisions are marked in section 10 of the spec.
+
+## What is here
+- `doc/ReaCat_Spec.md` — the spec (his decisions of 23 Nov 2026 are in it).
+- `lib/ReaCat.lua` — the core, PURE LUA (no ReaImGui): send / list / get / newest / touch / tags / update / delete / undelete / cleanup limit / boolean search (`query`).
+  An identical copy goes into every tool that sends or receives (a test that compares the copies is still to be written).
+- `lib/ReaCatPicker.lua` — the picker widget (ReaImGui): thumbnails drawn from the points, search box, date filter, sort, tag chips, info panel, tag editing,
+  Original range; `browser = true` adds select / delete / undo / send again / cleanup and the limit setting.
+- `ReaCat.lua` — the window (load it into the Actions list). `tools/seed_samples.lua` — puts ten sample curves (tag `sample`) into the catalogue to try it.
+- Tests: `lua5.4 tests/test_reacat.lua` (the lib, offline, 105 checks), `lua5.4 tests/test_picker_logic.lua` (filters, clicks, selection, delete, 33 checks),
+  `RT_REACAT=$PWD tests/run_in_reaper.sh $PWD/tests/window_smoke.lua` (the real window and the picker draw frames in a REAPER of its own; with `SHOT=<png> CROP=WxH+X+Y`
+  a screenshot of that part of the desktop is made: never save the whole desktop). The catalogue of that REAPER is its own; yours is not touched.
+
+## State (23 Nov 2026)
+- Lib and picker built and tested; the window drawn in a REAPER of its own and looked at in screenshots. NOT yet used with the mouse by tjingboem.
+- Not built: pin / window place / one window / ReaSnap pieces for the ReaCat window; the senders (ReaNvelopes, `CurveUI.draw`, MinervaCL Editors); the receivers
+  (MinervaCL Import, ReaMaskM, ReaShapeM); retiring `CurveShare.lua` and `reaac_series.lua`. See the migration list (spec section 9).
+- Interactions only a mouse can test: click / double-click / Ctrl+click / right-click on thumbnails, typing in the tag and note fields, the cleanup window.
+  Their logic is tested offline (`_click`, `_sendAgain`, `_delete`).
+- A listing reads every file; if it gets slow near 2000 entries, add a header cache.
+
+## Rules
+- Commit and push only on his word, after he has tried it in REAPER.
