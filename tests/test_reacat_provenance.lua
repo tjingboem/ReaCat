@@ -120,6 +120,27 @@ check("a taken id with other content: added under a new id", how3 == "added" and
 check("restore refuses broken text and a newer format", Cat.restore("x", "garbage") == nil and Cat.restore("x", "ReaCat 2\nkind=curve\n") == nil and Cat.restore("x", nil) == nil)
 check("restore of a bad id is given a new one", (function() local id, how = Cat.restore("../evil", (exported[1].text:gsub("name=a", "name=evil"))) return how == "added" and id ~= "../evil" and id:match("^[%w_%-]+$") end)())
 
+-- includeUsed: the entries this project uses come too, also when another project made them
+local baseCount = #Cat.exportProject(pid)
+local foreign = Cat.send{ source = "Prov", name = "foreign", points = { { 0, 0.77 }, { 1, 0.11 } }, projectid = "OTHER-PROJECT" }
+local plain = Cat.send{ source = "Prov", name = "plain", points = { { 0, 0.66 }, { 1, 0.22 } }, projectid = "OTHER-PROJECT" }
+check("exportProject without includeUsed: only this project's own", #Cat.exportProject(pid) == baseCount)
+Cat.useAdd{ hash = Cat.get(foreign).hash, what = "param", guid = "g", tool = "t" }
+local withUsed, hasForeign, hasPlain = Cat.exportProject(pid, true), false, false
+for _, x in ipairs(withUsed) do if x.id == foreign then hasForeign = true end if x.id == plain then hasPlain = true end end
+check("exportProject with includeUsed: plus what this project uses, not other entries of the other project", #withUsed == baseCount + 1 and hasForeign and not hasPlain, #withUsed)
+check("includeUsed without a project id still gives the used ones", #Cat.exportProject(nil, true) == 1)
+proj["ReaCat/usage"] = nil
+-- an entry that was deleted on purpose (it is in the trash) is not brought back by restore
+local gone = Cat.send{ source = "Prov", name = "gone", points = { { 0, 0.3 }, { 1, 0.4 } }, projectid = pid }
+local goneText = Cat.export(gone)
+Cat.delete(gone)
+local rGone, whyGone = Cat.restore(gone, goneText)
+check("restore leaves an entry alone that is in the trash", rGone == nil and whyGone:find("deleted", 1, true) ~= nil and Cat.get(gone) == nil, tostring(whyGone))
+Cat.undelete(gone)
+Cat.delete(foreign) Cat.delete(plain)
+os.execute("rm -rf '" .. root .. "/Data/ReaCat/_trash'")
+
 -- ------------------------------------------------ the usage record
 proj["ReaCat/usage"] = nil
 check("no usage at first", #Cat.usage() == 0 and next(Cat.usedHashes()) == nil)
