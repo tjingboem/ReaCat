@@ -203,8 +203,8 @@ title = (
     '<text:p text:style-name="TocTitle">Contents</text:p>')
 tocx = ('<text:table-of-content text:protected="false" text:name="Contents"><text:table-of-content-source text:outline-level="2">'
         '<text:index-title-template text:style-name="TocTitle">Contents</text:index-title-template>'
-        '<text:table-of-content-entry-template text:outline-level="1" text:style-name="Toc1"><text:index-entry-text/><text:index-entry-tab-stop style:type="right" style:leader-char="."/><text:index-entry-page-number/></text:table-of-content-entry-template>'
-        '<text:table-of-content-entry-template text:outline-level="2" text:style-name="Toc2"><text:index-entry-text/><text:index-entry-tab-stop style:type="right" style:leader-char="."/><text:index-entry-page-number/></text:table-of-content-entry-template>'
+        '<text:table-of-content-entry-template text:outline-level="1" text:style-name="Toc1"><text:index-entry-text/></text:table-of-content-entry-template>'
+        '<text:table-of-content-entry-template text:outline-level="2" text:style-name="Toc2"><text:index-entry-text/></text:table-of-content-entry-template>'
         '</text:table-of-content-source><text:index-body>' +
         "".join('<text:p text:style-name="Toc%d">%s</text:p>' % (lv, escape(t)) for lv, t in toc) +
         '</text:index-body></text:table-of-content>')

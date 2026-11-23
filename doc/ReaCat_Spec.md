@@ -236,7 +236,7 @@ Every receiver and every write adds a line to the project's ExtState (section `R
 One entry can be used in several places (a filter, a note structure, ...): several lines with the same hash. A line whose item is gone is stale: ReaCat checks that the item still exists before it shows the line.
 
 ### 11.3 In ReaCat
-- A **red border** on an entry that is used in the open project (a second colour for "used in another project", to be chosen).
+- A **red border** on an entry that is used in the open project. (A second colour for "used in another project" was considered and **rejected by tjingboem, 23 Nov 2026**: it would not help the composer, a project keeps its own copy of the curves it uses so deleting a catalogue entry never breaks another project, and it would need a record that every project updates. Do not propose it again.)
 - The info panel lists where it is used ("item ReaMaskM 22 Nov 14:45 on track 3", "automation item ReaNvelopes RAND ...") and **a click selects that item** in REAPER.
 - Search: `used:` finds the used ones; `NOT used:` the others. Cleanup proposes the never-used, oldest entries first.
 

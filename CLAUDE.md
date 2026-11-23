@@ -42,7 +42,7 @@ window, the migration order). Decisions are marked in section 10 of the spec.
 ## Design of 23 Nov 2026 (late): provenance, "used" borders, snapshots — see spec section 11. Nothing built yet.
 Decided by tjingboem: Option A for snapshots (with a hidden project ID next to the visible amber name), every write also files a copy in ReaCat, usage shown as a red border + a list in the info panel + click to select the item,
 item NOTES for the item side with a setting "also add to the item name" (off by default), receivers get "Latest" (newest of the kind, any source) and "ReaCat..." (the picker as a popup).
-Not yet confirmed: the embedded popup (vs the real ReaCat window) and the "Open the ReaCat window" button; the second border colour for "used in another project".
+Not yet confirmed: the embedded popup (vs the real ReaCat window) and the "Open the ReaCat window" button; (the second border colour for "used in another project" was rejected, see below).
 
 ## Step 1 of spec section 11 built (23 Nov 2026): the lib — tested offline (61 checks in `tests/test_reacat_provenance.lua`), NOT yet used by any tool
 `projectId`, `restore`, `export` / `exportProject`, the usage record (`useAdd`, `usage`, `usedHashes`, `usedBy`, `usePrune`), the item side (`noteWith`, `nameWith`, `markItem`, the name-suffix setting), the search word `used:`.
@@ -63,7 +63,7 @@ The old one-slot place (`CurveShare.lua`, `tjingboem_curve/current`) can go now:
 ## Step 3 of spec section 11 (23 Nov 2026): red borders, "used in" list, select the place, cleanup order — tested offline (provenance 73, picker 49) and in a REAPER of its own (selftest_places 11, window_smoke 10); screenshot looked at; NOT used by tjingboem, NOT committed
 - Picker: an entry used in the open project has a red border and a red dot (the dot stays when a selection or focus border wins); the header says "N used in this project"; the info panel lists the places ("MinervaCL: in MinervaCL", "ReaNvelopes: item ..."), a `select` button for an item or automation item (`Cat.selectPlace`: selects it and moves the edit cursor to its start), a place that no longer exists shows in red "(gone)", and the browser has "Forget the places that are gone" (`Cat.usePrune(Cat.placeExists)`). Places are looked up again every two seconds and when the usage changes. The browser's info panel is taller (250).
 - Lib: `findItem(guid)`, `placeExists(rec)`, `selectPlace(rec)` (an item, or an automation item named by `ai:<envelope guid>:<index>`; a parameter inside a tool says where it is); `cleanupCandidates` proposes the entries NOT used in this project first (oldest first), the used ones only after them, favourites never.
-- NOT built: the second colour for "used in another project" (a project only knows its own usage; it would need a record of its own).
+- DECIDED AGAINST (tjingboem, 23 Nov 2026): a second colour for "used in another project". It would not help the composer, every project keeps its own copy of what it uses, and it would need a record that all projects update. Do not propose it again.
 - The copies of `ReaCat.lua` / `ReaCatPicker.lua` in ReaNvelopes, ReaAC, ReaMaskM and ReaShapeM are updated (check_copies: 7 same) and their tests pass again; the live copies are updated.
 
 ## Step 4 (23 Nov 2026): ReaCat is a ReaSnap member — tested (selftest_snap 16 in a REAPER of its own; ReaSnap's run_selftest 23), NOT tried by tjingboem, committed in part
