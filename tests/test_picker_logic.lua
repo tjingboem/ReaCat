@@ -192,6 +192,12 @@ end
 check("and inside each group the most used come first", okOrder)
 check("every tag is in the list (no limit of 40)", (function() local n = 0 for _ in pairs(st.tags) do n = n + 1 end return n >= 5 end)())
 
+-- takeLatest: for a tool with a menu of its own
+local tl = P.takeLatest({ kind = "curve" })
+check("takeLatest gives the newest curve as a taken table", tl and tl.entry and tl.entry.kind == "curve" and tl.how == "latest" and tl.id == P.latest({ kind = "curve" }).id)
+local tn, tmsg = P.takeLatest({ accept = function() return false end })
+check("takeLatest with nothing to take says so", tn == nil and tmsg == "nothing to take yet")
+
 -- the label under a thumbnail: the module first, the name always readable
 check("label: module first, then the name", P.label({ source = "Lorenz Attractor", name = "x" }, 13) == "Lorenz Att… x", P.label({ source = "Lorenz Attractor", name = "x" }, 13))
 check("label: a short source stays whole", P.label({ source = "Sieve", name = "Gate" }, 13) == "Sieve Gate")

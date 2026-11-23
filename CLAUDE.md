@@ -90,3 +90,6 @@ NEXT: step 6, retire the old one-slot place (`CurveShare.lua`, `tjingboem_curve/
 
 ## Tag chips: two lines, scroll sideways, project tags first (23 Nov 2026, his request) — drawn in a REAPER of its own and looked at; wheel and Home NOT tried by hand, NOT committed
 The tags of the window are in a child of two lines with a HORIZONTAL scrollbar: each tag goes at the end of the shorter of the two lines (most used at the left, both lines about equally long); the mouse wheel scrolls sideways while the pointer is over them, Home goes back to the start (not while a field is being typed in); the limit of 40 chips is gone. Order: the amber project tags first, then the rest, each group by number of curves, ties alphabetically. Manual 3.1 says so (rebuilt). Copies of the picker in ReaAC, ReaMaskM, ReaShapeM updated (the tool popups show the same chips).
+
+## ReaMaskM sends too: one dropdown (23 Nov 2026) — see ReaMaskM/CLAUDE.md
+`ReaCatPicker.takeLatest(opts)` and `ReaCatPicker.popup(ctx, st, popupId, opts)` were added for a tool that has a menu of its own instead of the two buttons of `receiver` (ReaMaskM: one dropdown under the preset name with Latest / Open ReaCat / Send to ReaCat and the world). The picker tests pass 54. Copies updated everywhere.

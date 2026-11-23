@@ -649,6 +649,32 @@ function P.latest(opts)
   return nil
 end
 
+-- For a tool that offers the two ways in a menu of its own instead of two buttons (ReaMaskM): the newest entry the tool accepts as a taken table,
+-- or nil and a message.
+function P.takeLatest(opts)
+  local h = P.latest(opts or {})
+  local e = h and Cat.get(h.id)
+  if not e then return nil, "nothing to take yet" end
+  return { id = h.id, entry = e, originalRange = false, how = "latest" }
+end
+
+-- The picker in a popup that the tool opens itself (R.ImGui_OpenPopup(ctx, popupId), after its menu has closed). Returns what was taken, or nil.
+function P.popup(ctx, st, popupId, opts)
+  opts = opts or {}
+  local taken
+  if R.ImGui_BeginPopup(ctx, popupId) then
+    R.ImGui_Dummy(ctx, opts.width or 680, 1)
+    local t = P.draw(ctx, st, { kind = opts.kind, rulekind = opts.rulekind, accept = opts.accept, acceptKey = opts.acceptKey,
+                                gridH = opts.gridH or 230, panelH = opts.panelH, noRange = opts.noRange })
+    if t then
+      local e = Cat.get(t.id)
+      if e then taken = { id = t.id, entry = e, originalRange = t.originalRange, how = "picked" } R.ImGui_CloseCurrentPopup(ctx) end
+    end
+    R.ImGui_EndPopup(ctx)
+  end
+  return taken
+end
+
 -- Two buttons: "Latest" takes the newest entry the receiver accepts; "ReaCat..." opens the picker under the buttons.
 -- Returns nil, or { id =, entry = (ReaCat.get), originalRange = true | false, how = "latest" | "picked" } on the frame something was taken.
 function P.receiver(ctx, st, opts)
