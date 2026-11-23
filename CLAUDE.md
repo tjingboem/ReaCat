@@ -11,7 +11,7 @@ window, the migration order). Decisions are marked in section 10 of the spec.
 - `lib/ReaCatPicker.lua` — the picker widget (ReaImGui): thumbnails drawn from the points, search box, date filter, sort, tag chips, info panel, tag editing,
   Original range; `browser = true` adds select / delete / undo / send again / cleanup and the limit setting.
 - `ReaCat.lua` — the window (load it into the Actions list). `tools/seed_samples.lua` — puts ten sample curves (tag `sample`) into the catalogue to try it.
-- Tests: `lua5.4 tests/test_reacat.lua` (the lib, offline, 105 checks), `lua5.4 tests/test_picker_logic.lua` (filters, clicks, selection, delete, 33 checks),
+- Tests: `lua5.4 tests/test_reacat.lua` (the lib, offline, 121 checks), `lua5.4 tests/test_picker_logic.lua` (filters, clicks, selection, delete, project chip, 35 checks),
   `RT_REACAT=$PWD tests/run_in_reaper.sh $PWD/tests/window_smoke.lua` (the real window and the picker draw frames in a REAPER of its own; with `SHOT=<png> CROP=WxH+X+Y`
   a screenshot of that part of the desktop is made: never save the whole desktop). The catalogue of that REAPER is its own; yours is not touched.
 
@@ -25,3 +25,9 @@ window, the migration order). Decisions are marked in section 10 of the spec.
 
 ## Rules
 - Commit and push only on his word, after he has tried it in REAPER.
+
+## 23 Nov 2026, later: the project name and smaller thumbnails (his requests)
+- Every send writes the REAPER project name (without .RPP; "Unsaved Project" when the project has no file yet) as the header key `project=`: a FIXED tag, not in `tags`,
+  not removable, kept when the same thing is sent again, shown in AMBER (chips and the info panel). `tag:"name"`, `project:part` and plain words find it. `ReaCat.projectName()`.
+  The name is looked up with `GetProjectName(0)`; in the test REAPER it is always "Unsaved Project". Not tried with a saved project in his REAPER.
+- Thumbnails 96 x 54 (were 120 x 68), the label under them is "name  source". Tag chips in the info panel wrap.

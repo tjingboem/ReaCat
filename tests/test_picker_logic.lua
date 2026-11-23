@@ -41,6 +41,11 @@ local function names(s) local o = {} for i, e in ipairs(s.list) do o[i] = e.name
 P._refresh(st, {})
 check("all five listed, newest first", #st.list == 5 and st.total == 5 and st.list[1].id == r2, names(st))
 check("tags counted over the whole catalogue", (function() for _, t in ipairs(st.tags) do if t.tag == "lfo" and t.count == 2 then return true end end end)())
+check("the project name is a flagged chip", (function() for _, t in ipairs(st.tags) do if t.tag == "Unsaved Project" and t.project and t.count == 5 then return true end end end)())
+st.query, st.dirty = 'tag:"unsaved project"', true
+P._refresh(st, {})
+check("clicking the project chip filters on it", #st.list == 5)
+st.query, st.dirty = "", true
 P._refresh(st, { kind = "rule" })
 check("opts.kind filters", #st.list == 2 and st.total == 5)
 P._refresh(st, { kind = "rule", rulekind = "rhythm" })

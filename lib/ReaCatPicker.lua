@@ -20,7 +20,7 @@ local P = {}
 
 local C = {
   bg = 0x14181CFF, line = 0x7FB6FFFF, border = 0x3C4650FF, hover = 0xFFFFFFFF, sel = 0xF0A030FF, focus = 0x58D68DFF,
-  dim = 0x9AA4AEFF, err = 0xFF7070FF, ok = 0x70D090FF, ruletext = 0xC8B8F0FF, fav = 0xFFD040FF,
+  dim = 0x9AA4AEFF, err = 0xFF7070FF, ok = 0x70D090FF, ruletext = 0xC8B8F0FF, fav = 0xFFD040FF, amber = 0xA86A00FF, amberOn = 0xD98C00FF,
 }
 
 local DATE_ITEMS = "All dates\0Today\0Last 7 days\0Last 30 days\0Range\0"
@@ -65,7 +65,7 @@ local function refresh(st, opts)
 
   local all = Cat.list()
   st.total = #all
-  local out, counts, spelling = {}, {}, {}
+  local out, counts, spelling, projects = {}, {}, {}, {}
   for _, e in ipairs(all) do
     local day = e.sent:sub(1, 10)
     local keep = true
@@ -75,6 +75,12 @@ local function refresh(st, opts)
     if keep and to and day > to then keep = false end
     if keep and match and not match(e) then keep = false end
     if keep then out[#out + 1] = e end
+    if e.project and e.project ~= "" then            -- the project name is a fixed tag, shown in amber
+      local pk = e.project:lower()
+      counts[pk] = (counts[pk] or 0) + 1
+      spelling[pk] = spelling[pk] or e.project
+      projects[pk] = true
+    end
     for _, t in ipairs(e.tags) do                      -- the chips show every tag of the catalogue
       local k = t:lower()
       counts[k] = (counts[k] or 0) + 1
@@ -95,7 +101,7 @@ local function refresh(st, opts)
   end
   st.list = out
   local tags = {}
-  for k, c in pairs(counts) do tags[#tags + 1] = { tag = spelling[k], count = c } end
+  for k, c in pairs(counts) do tags[#tags + 1] = { tag = spelling[k], count = c, project = projects[k] or nil } end
   table.sort(tags, function(a, b) if a.count ~= b.count then return a.count > b.count end return a.tag:lower() < b.tag:lower() end)
   st.tags = tags
 end
@@ -185,7 +191,8 @@ local function chipsRow(ctx, st)
     end
     local needle = 'tag:"' .. t.tag .. '"'
     local on = st.query:find(needle, 1, true) ~= nil
-    if on then R.ImGui_PushStyleColor(ctx, R.ImGui_Col_Button(), 0x2E6BA8FF) end
+    local tint = t.project and (on and C.amberOn or C.amber) or (on and 0x2E6BA8FF) or nil
+    if tint then R.ImGui_PushStyleColor(ctx, R.ImGui_Col_Button(), tint) end
     if R.ImGui_SmallButton(ctx, label .. "##chip" .. i) then
       if on then
         local a, b = st.query:find(needle, 1, true)
@@ -195,7 +202,7 @@ local function chipsRow(ctx, st)
       end
       st.dirty = true
     end
-    if on then R.ImGui_PopStyleColor(ctx) end
+    if tint then R.ImGui_PopStyleColor(ctx) end
     used = used + w + 4
     shown = shown + 1
   end
@@ -251,17 +258,36 @@ local function infoPanel(ctx, st, opts, shown, h)
     R.ImGui_PopTextWrapPos(ctx)
   end
   -- the tags; while this entry is the one being edited they can be removed and added
+  local function projectChip()
+    if shown.project and shown.project ~= "" then
+      R.ImGui_PushStyleColor(ctx, R.ImGui_Col_Button(), C.amber)
+      if R.ImGui_SmallButton(ctx, shown.project .. "##proj") then
+        local needle = 'tag:"' .. shown.project .. '"'
+        if not st.query:find(needle, 1, true) then st.query = (st.query ~= "" and (st.query .. " ") or "") .. needle st.dirty = true end
+      end
+      R.ImGui_PopStyleColor(ctx)
+      return true
+    end
+  end
   if editing then
     local i = 0
+    local avail = R.ImGui_GetContentRegionAvail(ctx)
+    local hasProj = projectChip()
+    local used = hasProj and (R.ImGui_CalcTextSize(ctx, shown.project) + 18) or 0
     for _, t in ipairs(shown.tags) do
-      if i > 0 then R.ImGui_SameLine(ctx, 0, 4) end
-      if R.ImGui_SmallButton(ctx, t .. "  x##rm" .. i) then
+      local label = t .. "  x"
+      local cw = R.ImGui_CalcTextSize(ctx, label) + 14
+      if used > 0 then
+        if used + cw + 4 > avail then used = 0 else R.ImGui_SameLine(ctx, 0, 4) end
+      end
+      used = used + cw + 4
+      if R.ImGui_SmallButton(ctx, label .. "##rm" .. i) then
         for _, id in ipairs(tagTargets(st)) do Cat.update(id, { removetags = { t } }) end
         st.dirty = true
       end
       i = i + 1
     end
-    if i == 0 then R.ImGui_TextColored(ctx, C.dim, "no tags") end
+    if i == 0 and not hasProj then R.ImGui_TextColored(ctx, C.dim, "no tags") end
     local targets = tagTargets(st)
     R.ImGui_SetNextItemWidth(ctx, 200)
     local ch, v = R.ImGui_InputTextWithHint(ctx, "##addtag", (#targets > 1) and ("add a tag to " .. #targets .. " entries") or "add a tag (Enter)", st.tagInput,
@@ -296,9 +322,10 @@ local function infoPanel(ctx, st, opts, shown, h)
     local fch, fv = R.ImGui_Checkbox(ctx, "keep (a cleanup never proposes it)##fav", shown.fav)
     if fch then Cat.update(shown.id, { fav = fv }) st.dirty = true end
   else
+    if projectChip() and #shown.tags > 0 then R.ImGui_SameLine(ctx, 0, 6) end
     if #shown.tags > 0 then
       R.ImGui_PushTextWrapPos(ctx, 0)
-      R.ImGui_TextWrapped(ctx, "tags: " .. table.concat(shown.tags, ", "))
+      R.ImGui_TextWrapped(ctx, table.concat(shown.tags, ", "))
       R.ImGui_PopTextWrapPos(ctx)
     end
   end
@@ -354,8 +381,8 @@ end
 -- ---------------------------------------------------------------- the grid
 
 local function grid(ctx, st, opts, h)
-  local tw, th = opts.thumbW or 120, opts.thumbH or 68
-  local gap, labelH = 8, 16
+  local tw, th = opts.thumbW or 96, opts.thumbH or 54
+  local gap, labelH = 6, 16
   local rowH = th + labelH + gap
   if not R.ImGui_BeginChild(ctx, "##grid", 0, h, R.ImGui_ChildFlags_Borders()) then return nil end
   local taken
@@ -386,7 +413,7 @@ local function grid(ctx, st, opts, h)
       if hovered then st.hover, border = e, C.hover end
       P.picture(dl, x, y, tw, th, full(st, e.id), border)
       if e.fav then R.ImGui_DrawList_AddText(dl, x + tw - 14, y + 2, C.fav, "*") end
-      R.ImGui_DrawList_AddText(dl, x + 2, y + th + 1, C.dim, shorten(e.source .. " " .. e.name, math.floor(tw / 7)))
+      R.ImGui_DrawList_AddText(dl, x + 2, y + th + 1, C.dim, shorten(e.name .. "  " .. e.source, math.floor(tw / 7)))
       if hovered then
         if opts.browser and R.ImGui_IsMouseDoubleClicked(ctx, 0) then
           P._sendAgain(st, e)

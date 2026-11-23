@@ -27,6 +27,8 @@ reaper = {
   SetExtState = function(s, k, v, persist) ext[s .. "/" .. k] = v if persist then persisted[s .. "/" .. k] = true end end,
 }
 
+local projectName = ""
+reaper.GetProjectName = function() return projectName end
 local Cat = require("ReaCat")
 
 local passed, failed = 0, 0
@@ -232,6 +234,34 @@ local hit = Cat.list{ query = Cat.query("tag:rule") }
 check("list with a query", #hit == 1 and hit[1].id == idR)
 local both = Cat.list{ query = Cat.query("reanvelopes OR sieve") }
 check("list with OR", #both >= 2)
+
+-- ------------------------------------------------ the project name: a fixed tag
+check("unsaved project: 'Unsaved Project'", Cat.projectName() == "Unsaved Project")
+local pU = Cat.send{ source = "Proj", name = "unsaved", points = { { 0, 0.2 }, { 1, 0.8 } } }
+check("an unsaved project is named 'Unsaved Project'", Cat.get(pU).project == "Unsaved Project")
+projectName = "My Song.RPP"
+check("the project name loses .RPP", Cat.projectName() == "My Song")
+projectName = "other.rpp"
+check("also in lower case", Cat.projectName() == "other")
+projectName = "My Song.RPP"
+local pS = Cat.send{ source = "Proj", name = "saved", points = { { 0, 0.3 }, { 1, 0.7 } } }
+check("a saved project gives its name", Cat.get(pS).project == "My Song")
+check("the name is stored in the file", readAll(cat .. "/" .. pS .. ".reacat"):find("\nproject=My Song\n", 1, true) ~= nil)
+check("the project is not among the normal tags", (function() for _, t in ipairs(Cat.get(pS).tags) do if t == "My Song" then return false end end return true end)())
+check("tag: finds the project", Cat.query('tag:"my song"')(Cat.get(pS)) == true and Cat.query('tag:"my song"')(Cat.get(pU)) == false)
+check("project: field", Cat.query("project:song")(Cat.get(pS)) == true and Cat.query("project:song")(Cat.get(pU)) == false)
+check("a plain word finds the project", Cat.query("song")(Cat.get(pS)) == true)
+check("tag: of a part of the project name does not match", Cat.query("tag:song")(Cat.get(pS)) == false)
+local counted
+for _, t in ipairs(Cat.tags()) do if t.tag == "My Song" then counted = t end end
+check("tags() counts the project, flagged", counted and counted.count == 1 and counted.project == true)
+Cat.update(pS, { tags = { "x" }, note = "n" })
+check("an edit keeps the project", Cat.get(pS).project == "My Song")
+check("tags can not remove the project", (function() Cat.update(pS, { removetags = { "My Song" } }) return Cat.get(pS).project == "My Song" end)())
+projectName = "Another.RPP"
+Cat.send{ source = "Proj", name = "saved", points = { { 0, 0.3 }, { 1, 0.7 } } }
+check("sending the same thing again keeps the first project", Cat.get(pS).project == "My Song")
+check("the project can be given by the sender", Cat.get(Cat.send{ source = "Proj", name = "given", points = { { 0, 0 }, { 1, 1 } }, project = "Chosen" }).project == "Chosen")
 
 -- ------------------------------------------------ touch: a click in the window makes an entry the newest
 local others = Cat.list{ query = Cat.query("tag:rule") }

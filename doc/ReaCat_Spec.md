@@ -68,6 +68,7 @@ points
 | `beats` | curve (optional) | The length of the curve in beats, if the sender knows it. A receiver may use it or ignore it. |
 | `range` | curve (optional) | `lo,hi`: what 0 and 1 stood for at the sender (e.g. the pitch range of a walk). The catalogue never applies it; a receiver may offer "Original range" (section 7). |
 | `unit` | curve (optional) | A word for the values (information). |
+| `project` | all (set by `send`) | The name of the REAPER project at the moment of the send, without `.RPP`; **"Unsaved Project"** when the project has no file yet. A **fixed tag**: it is not in `tags`, the user cannot remove it, and it stays as first written (sending the same thing again from another project does not change it). Shown in **amber**. Found by `tag:"name"` (the whole name), by `project:part`, and by a plain word. A sender may give it (`project=`); otherwise the lib asks REAPER (`ReaCat.projectName()`). |
 | `tags` | all (optional) | Comma separated words, no commas inside a tag. Compared without case. |
 | `note` | all (optional) | One free text. |
 | `fav` | all (optional) | `1` = the user marked it; a cleanup never proposes to delete it. |
@@ -187,7 +188,8 @@ One search box, the same in ReaCat and in every picker (the matcher is in the li
 | `NOT step` or `-step` | not this |
 | `( lorenz OR rossler ) AND smooth` | brackets group; without brackets NOT binds first, then AND, then OR |
 | `"first idea"` | a phrase in quotes |
-| `tag:smooth` | only a tag, the whole tag (`tag:"my tag"` for several words) |
+| `tag:smooth` | only a tag, the whole tag (`tag:"my tag"` for several words); the project name counts as a tag here |
+| `project:song` | only the project name (part of it is enough) |
 | `source:ReaNvelopes`, `name:x`, `note:bridge` | only that field (`source` and `name` match part of the text, `note` too) |
 
 - The operators AND, OR, NOT are written in capitals; `and`, `or`, `not` are ordinary words.
@@ -213,5 +215,6 @@ Each step: tested offline first, then by him in REAPER; commit and push only on 
 - Tags: lower-case everything, or show as typed (proposal: as typed, compared without case)?
 - ~~Scale back to the original range~~ **Decided 23 Nov 2026: yes**, see section 7.
 - ~~Cleanup suggestion after how many entries~~ **Decided 23 Nov 2026: yes, default 2000, and the user can change it**, see section 8.
+- **Fixed tag: the project name (decided 23 Nov 2026, tjingboem), amber; "Unsaved Project" when not saved yet.** Thumbnails smaller (96 x 54, were 120 x 68) so more fit.
 - ~~Tags as typed or lower-cased~~ **Decided 23 Nov 2026: as typed** (compared without case). He also asked for **boolean search**, see section 8.1.
 - Do other kinds follow (a note series, a pattern)? The `kind` key leaves room; none is specified now.

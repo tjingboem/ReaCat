@@ -20,7 +20,7 @@ M.DEFAULT_CLEANUP = 2000
 
 local SECTION = "ReaCat"
 local KNOWN = { kind = true, source = true, name = true, saved = true, sent = true, beats = true, range = true,
-                unit = true, tags = true, note = true, fav = true, rulekind = true, hash = true, seq = true }
+                unit = true, tags = true, note = true, fav = true, rulekind = true, hash = true, seq = true, project = true }
 
 local dirOverride
 function M.setDir(path) dirOverride = path end     -- tests, or a user who wants the catalogue elsewhere
@@ -174,6 +174,7 @@ end
 
 local function serialize(e)
   local L = { "ReaCat 1", "kind=" .. e.kind, "source=" .. e.source, "name=" .. e.name, "saved=" .. e.saved, "sent=" .. e.sent }
+  if e.project and e.project ~= "" then L[#L + 1] = "project=" .. oneLine(e.project) end
   if e.beats then L[#L + 1] = string.format("beats=%.10g", e.beats) end
   if e.range then L[#L + 1] = string.format("range=%.10g,%.10g", e.range[1], e.range[2]) end
   if e.unit and e.unit ~= "" then L[#L + 1] = "unit=" .. oneLine(e.unit) end
@@ -229,6 +230,7 @@ local function parse(text, headerOnly)
   e.rulekind = raw.rulekind
   e.hash = raw.hash or ""
   e.seq = tonumber(raw.seq)
+  e.project = raw.project
   if headerOnly then return e end
   if e.kind == "rule" then
     if marker ~= "text" then return nil, "a rule needs a text body" end
@@ -335,8 +337,14 @@ function M.newest(source, name)
 end
 
 function M.tags()
-  local count, spelling = {}, {}
+  local count, spelling, isProject = {}, {}, {}
   for _, e in ipairs(M.list()) do
+    if e.project and e.project ~= "" then       -- the project name counts as a tag (a fixed one)
+      local pk = e.project:lower()
+      count[pk] = (count[pk] or 0) + 1
+      spelling[pk] = spelling[pk] or e.project
+      isProject[pk] = true
+    end
     for _, t in ipairs(e.tags) do
       local k = t:lower()
       count[k] = (count[k] or 0) + 1
@@ -344,12 +352,24 @@ function M.tags()
     end
   end
   local out = {}
-  for k, c in pairs(count) do out[#out + 1] = { tag = spelling[k], count = c } end
+  for k, c in pairs(count) do out[#out + 1] = { tag = spelling[k], count = c, project = isProject[k] or nil } end
   table.sort(out, function(a, b) if a.count ~= b.count then return a.count > b.count end return a.tag:lower() < b.tag:lower() end)
   return out
 end
 
 -- ---------------------------------------------------------------- sending
+
+-- The name of the REAPER project at this moment, without ".RPP"; "Unsaved Project" when it has no file yet.
+function M.projectName()
+  local name
+  if reaper.GetProjectName then
+    local r = { pcall(reaper.GetProjectName, 0) }
+    for i = #r, 2, -1 do if type(r[i]) == "string" then name = r[i] break end end
+  end
+  name = (oneLine(name or ""):gsub("%.[Rr][Pp][Pp]$", ""))
+  if name == "" then return "Unsaved Project" end
+  return name
+end
 
 -- Make an entry the newest without copying anything: "sent" and "seq" move, the stamp goes up (a click in the ReaCat
 -- window, or the same content sent again). Returns the id, or nil and the reason.
@@ -401,6 +421,7 @@ function M.send(t)
   for _, g in ipairs(given or {}) do addTag(e.tags, g) end
   e.note = t.note and tostring(t.note) or nil
   e.hash = fnv1a(kind .. "\n" .. body)
+  e.project = (t.project and oneLine(t.project) ~= "") and oneLine(t.project) or M.projectName()
 
   local dir = M.dir()
   ensureDir(dir)
@@ -481,7 +502,7 @@ end
 
 -- ---------------------------------------------------------------- boolean search (spec 8.1)
 
-local FIELDS = { tag = true, source = true, name = true, note = true }
+local FIELDS = { tag = true, source = true, name = true, note = true, project = true }
 
 local function tokenize(s)
   local toks, i, n = {}, 1, #s
@@ -601,13 +622,15 @@ local function evalNode(n, h)
   if n.op == "not" then return not evalNode(n[1], h) end
   local f, text = n.field, n.text
   if f == "tag" then
+    if h.project and h.project:lower() == text then return true end       -- the project name is a fixed tag
     for _, t in ipairs(h.tags or {}) do if t:lower() == text then return true end end
     return false
+  elseif f == "project" then return has(h.project or "", text)
   elseif f == "source" then return has(h.source or "", text)
   elseif f == "name" then return has(h.name or "", text)
   elseif f == "note" then return has(h.note or "", text)
   end
-  return has(h.name or "", text) or has(h.source or "", text) or has(table.concat(h.tags or {}, ","), text) or has(h.note or "", text)
+  return has(h.name or "", text) or has(h.source or "", text) or has(table.concat(h.tags or {}, ","), text) or has(h.note or "", text) or has(h.project or "", text)
 end
 
 -- Returns match(header) -> boolean, or nil and the problem (the caller shows it and leaves the list unfiltered).
