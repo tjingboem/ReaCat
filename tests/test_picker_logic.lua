@@ -198,11 +198,6 @@ check("takeLatest gives the newest curve as a taken table", tl and tl.entry and 
 local tn, tmsg = P.takeLatest({ accept = function() return false end })
 check("takeLatest with nothing to take says so", tn == nil and tmsg == "nothing to take yet")
 
--- the label under a thumbnail: the module first, the name always readable
-check("label: module first, then the name", P.label({ source = "Lorenz Attractor", name = "x" }, 13) == "Lorenz Att… x", P.label({ source = "Lorenz Attractor", name = "x" }, 13))
-check("label: a short source stays whole", P.label({ source = "Sieve", name = "Gate" }, 13) == "Sieve Gate")
-check("label: a long name is cut, never empty", #P.label({ source = "S", name = "a very long name here" }, 13) > 0)
-
 os.execute("rm -rf '" .. root .. "'")
 print(string.format("%d checks passed, %d failed", passed, failed))
 os.exit(failed == 0 and 0 or 1)

@@ -191,19 +191,6 @@ function P.picture(dl, x, y, w, h, e, border)
   R.ImGui_DrawList_AddRect(dl, x, y, x + w, y + h, border or C.border, 3, 0, border and 2 or 1)
 end
 
-local function shorten(s, maxChars)
-  if #s <= maxChars then return s end
-  return s:sub(1, math.max(1, maxChars - 1)) .. "…"
-end
-
--- "Lorenz Attractor x": the module (the source) first, then the name. When the room is short the source gives way, so that
--- the name (the x, y, z of an attractor) always stays readable.
-function P.label(e, maxChars)
-  local name = shorten(e.name, math.max(3, math.floor(maxChars * 0.6)))
-  local room = maxChars - (utf8.len(name) or #name) - 1
-  if room < 4 then return name end
-  return shorten(e.source, room) .. " " .. name
-end
 
 -- ---------------------------------------------------------------- small controls
 
@@ -276,6 +263,24 @@ local function infoPanel(ctx, st, opts, shown, h)
   local x, y = R.ImGui_GetCursorScreenPos(ctx)
   R.ImGui_Dummy(ctx, 240, 120)
   P.picture(R.ImGui_GetWindowDrawList(ctx), x, y, 240, 120, e)
+  if opts.browser and editing then
+    -- Send (the ReaCat window only): this curve becomes the newest, so that "Latest" in ReaMaskM, ReaShapeM, MinervaCL and any other tool takes it and nobody has to look for it
+    -- here again (the same as a double-click on its picture). Green and small, under the large picture (tjingboem, 23 Nov 2026); what it is for is in the manual, not on the screen.
+    R.ImGui_Dummy(ctx, 1, 6)                                                              -- a little space between the picture and the button
+    R.ImGui_SetCursorPosX(ctx, R.ImGui_GetCursorPosX(ctx) + (240 - 70) / 2)          -- in the middle under the large picture (240 px wide)
+    R.ImGui_PushStyleVar(ctx, R.ImGui_StyleVar_FrameRounding(), 6)
+    R.ImGui_PushStyleColor(ctx, R.ImGui_Col_Button(), 0x2E8B57FF)
+    R.ImGui_PushStyleColor(ctx, R.ImGui_Col_ButtonHovered(), 0x3AA66BFF)
+    R.ImGui_PushStyleColor(ctx, R.ImGui_Col_ButtonActive(), 0x277A4CFF)
+    if R.ImGui_Button(ctx, "Send##sendnewest", 70, 0) then
+      if Cat.touch(shown.id) then
+        st.dirty = true
+        say(st, "sent: " .. shown.source .. " - " .. shown.name .. " (now the newest: Latest takes it)")
+      end
+    end
+    R.ImGui_PopStyleColor(ctx, 3)
+    R.ImGui_PopStyleVar(ctx)
+  end
   -- under the picture: what 0 and 1 stood for, and the Original range choice
   if shown.range then
     R.ImGui_TextColored(ctx, C.dim, string.format("0 = %.6g, 1 = %.6g %s", shown.range[1], shown.range[2], shown.unit or ""))
@@ -286,7 +291,9 @@ local function infoPanel(ctx, st, opts, shown, h)
   end
   R.ImGui_EndGroup(ctx)
   R.ImGui_SameLine(ctx, 0, 16)
-  R.ImGui_BeginGroup(ctx)
+  -- the words on the right scroll by themselves; the picture and the Send button on the left stay where they are (tjingboem, 23 Nov 2026)
+  local textOpen = R.ImGui_BeginChild(ctx, "##infotext", 0, 0, R.ImGui_ChildFlags_None())
+  if textOpen then
   R.ImGui_Text(ctx, shown.source .. "  -  " .. shown.name)
   R.ImGui_TextColored(ctx, C.dim, "saved " .. shown.saved .. "     sent " .. shown.sent)
   local facts = shown.kind
@@ -300,6 +307,7 @@ local function infoPanel(ctx, st, opts, shown, h)
     R.ImGui_PopTextWrapPos(ctx)
   end
   -- the tags; while this entry is the one being edited they can be removed and added
+  R.ImGui_Dummy(ctx, 1, 8)                                   -- space between the three sections
   local function projectChip()
     if shown.project and shown.project ~= "" then
       R.ImGui_PushStyleColor(ctx, R.ImGui_Col_Button(), C.amber)
@@ -374,6 +382,7 @@ local function infoPanel(ctx, st, opts, shown, h)
   -- where this entry is used in the open project: a click selects the place in REAPER
   local places = (st.used and st.used[shown.hash]) and Cat.usedBy(shown.hash) or {}
   if #places > 0 then
+    R.ImGui_Dummy(ctx, 1, 8)                                 -- space between the three sections
     local now = R.time_precise()
     st.pc = st.pc or {}
     local pc = st.pc[shown.hash]
@@ -403,7 +412,8 @@ local function infoPanel(ctx, st, opts, shown, h)
       st.dirty, st.pc = true, nil
     end
   end
-  R.ImGui_EndGroup(ctx)
+  end
+  if textOpen then R.ImGui_EndChild(ctx) end
   R.ImGui_EndChild(ctx)
 end
 
@@ -456,8 +466,8 @@ end
 
 local function grid(ctx, st, opts, h)
   local tw, th = opts.thumbW or 96, opts.thumbH or 54
-  local gap, labelH = 6, 16
-  local rowH = th + labelH + gap
+  local gap = 6                                   -- no label under a thumbnail (23 Nov 2026): the information panel says what it is
+  local rowH = th + gap
   if not R.ImGui_BeginChild(ctx, "##grid", 0, h, R.ImGui_ChildFlags_Borders()) then return nil end
   local taken
   local availW = R.ImGui_GetContentRegionAvail(ctx)
@@ -480,16 +490,14 @@ local function grid(ctx, st, opts, h)
       local x, y = x0 + c * (tw + gap), y0 + r * rowH
       R.ImGui_SetCursorScreenPos(ctx, x, y)
       R.ImGui_PushID(ctx, e.id)
-      R.ImGui_InvisibleButton(ctx, "##t", tw, th + labelH)
+      R.ImGui_InvisibleButton(ctx, "##t", tw, th)
       local hovered = R.ImGui_IsItemHovered(ctx)
       local border
       local isUsed = st.used and st.used[e.hash] ~= nil
       if st.sel[e.id] then border = C.sel elseif st.focus == e.id then border = C.focus elseif isUsed then border = C.used end
       if hovered then st.hover, border = e, C.hover end
       P.picture(dl, x, y, tw, th, full(st, e.id), border)
-      if isUsed then R.ImGui_DrawList_AddCircleFilled(dl, x + 7, y + 7, 4, C.used) end        -- red also when another border wins
       if e.fav then R.ImGui_DrawList_AddText(dl, x + tw - 14, y + 2, C.fav, "*") end
-      R.ImGui_DrawList_AddText(dl, x + 2, y + th + 1, C.dim, P.label(e, math.floor(tw / 7)))
       if hovered then
         if opts.browser and R.ImGui_IsMouseDoubleClicked(ctx, 0) then
           P._sendAgain(st, e)
@@ -514,8 +522,13 @@ end
 
 local function cleanupLine(ctx, st)
   local limit = Cat.cleanupLimit()
+  -- the setting of ReaCat.markItem: besides the line in the item's notes, the curve's name is added to the item's name (off by default)
+  local sch, sv = R.ImGui_Checkbox(ctx, "Curve name on item##namesuffix", Cat.nameSuffixOn())
+  if sch then Cat.setNameSuffixOn(sv) end
+  R.ImGui_SameLine(ctx, 0, 0)
+  R.ImGui_SetCursorPosX(ctx, math.floor(R.ImGui_GetWindowWidth(ctx) / 2))      -- the limit sits in the middle of the row
   R.ImGui_SetNextItemWidth(ctx, 90)
-  local ch, v = R.ImGui_InputInt(ctx, "suggest a cleanup above this many entries (0 = never)##limit", limit, 0, 0)
+  local ch, v = R.ImGui_InputInt(ctx, "max entries##limit", limit, 0, 0)
   if ch then Cat.setCleanupLimit(v) limit = Cat.cleanupLimit() end
   if limit > 0 and st.total > limit then
     R.ImGui_SameLine(ctx, 0, 12)
@@ -610,7 +623,6 @@ function P.draw(ctx, st, opts)
   if opts.browser then
     cleanupLine(ctx, st)
     if #st.deleted > 0 then
-      R.ImGui_SameLine(ctx, 0, 12)
       if R.ImGui_SmallButton(ctx, "Undo delete##undo") then
         local ids = table.remove(st.deleted)
         for _, id in ipairs(ids) do Cat.undelete(id) end
@@ -619,13 +631,9 @@ function P.draw(ctx, st, opts)
       end
     end
     if st.msg and R.time_precise() - st.msgAt < 6 then
-      R.ImGui_SameLine(ctx, 0, 12)
+      if #st.deleted > 0 then R.ImGui_SameLine(ctx, 0, 12) end
       R.ImGui_TextColored(ctx, C.ok, st.msg)
     end
-    -- the setting of ReaCat.markItem: besides the line in the item's notes, the curve's name is added to the item's name (off by default)
-    local suffixOn = Cat.nameSuffixOn()
-    local sch, sv = R.ImGui_Checkbox(ctx, "Also add the curve to the item's name when a tool uses it on an item##namesuffix", suffixOn)
-    if sch then Cat.setNameSuffixOn(sv) end
   end
   return taken
 end

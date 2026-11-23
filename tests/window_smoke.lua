@@ -53,7 +53,7 @@ local ctx2 = reaper.ImGui_CreateContext("ReaCat picker test")
 local st2 = Picker.new()
 local taken
 local function loop2()
-  reaper.ImGui_SetNextWindowPos(ctx2, 1320, 20, reaper.ImGui_Cond_FirstUseEver())
+  reaper.ImGui_SetNextWindowPos(ctx2, 2240, 20, reaper.ImGui_Cond_FirstUseEver())
   reaper.ImGui_SetNextWindowSize(ctx2, 640, 560, reaper.ImGui_Cond_FirstUseEver())
   local vis, open = reaper.ImGui_Begin(ctx2, "picker test", true)
   if vis then
@@ -69,7 +69,7 @@ reaper.defer(loop2)
 local ctx3 = reaper.ImGui_CreateContext("ReaCat browser test")
 local st3 = Picker.new()
 local function loop3()
-  reaper.ImGui_SetNextWindowPos(ctx3, 1320, 590, reaper.ImGui_Cond_FirstUseEver())
+  reaper.ImGui_SetNextWindowPos(ctx3, 1320, 20, reaper.ImGui_Cond_FirstUseEver())
   reaper.ImGui_SetNextWindowSize(ctx3, 900, 560, reaper.ImGui_Cond_FirstUseEver())
   local vis, open = reaper.ImGui_Begin(ctx3, "browser test", true)
   if vis then
@@ -87,7 +87,7 @@ local st5, frames4 = Picker.new(), 0
 st4.rOpen = true
 local took
 local function loop4()
-  reaper.ImGui_SetNextWindowPos(ctx4, 2400, 20, reaper.ImGui_Cond_FirstUseEver())
+  reaper.ImGui_SetNextWindowPos(ctx4, 3000, 20, reaper.ImGui_Cond_FirstUseEver())
   reaper.ImGui_SetNextWindowSize(ctx4, 720, 520, reaper.ImGui_Cond_FirstUseEver())
   local vis, open = reaper.ImGui_Begin(ctx4, "receiver test", true)
   if vis then

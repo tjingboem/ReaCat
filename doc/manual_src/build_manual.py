@@ -85,7 +85,7 @@ table(["Part", "What it does"], [
     ["Search box", "Type words to find curves. It understands AND, OR, NOT, brackets, quotes and field searches (3.2). A search that cannot be read is shown in red under the box and does not filter the list."],
     ["Date and sort", "The list can show all dates, today, the last 7 or 30 days, or a range you type as YYYY-MM-DD. It can be sorted newest first, oldest first, or by tool. The date is the day the curve was last sent."],
     ["Tags", "Every tag in the catalogue, with how many curves have it, in two lines that scroll sideways: turn the mouse wheel over them, and press Home to go back to the start. The tags with the name of a project come first and are amber, then the others, the most used first. A click adds the tag to the search, another click takes it out."],
-    ["Pictures", "Each curve drawn small, with its tool and name under it, for example Lorenz Attractor x. A rule (the text that Markov, Xenakis Sieve and GA Rhythm send) is drawn as a small box with its text."],
+    ["Pictures", "Each curve drawn small, without a name under it: hover a picture, or select it, and the information panel says what it is. A rule (the text that Markov, Xenakis Sieve and GA Rhythm send) is drawn as a small box with its text. A star in the corner marks a curve that you keep."],
     ["Information", "Hover a picture, or select it, to see the large picture, the dates, the number of points, the range of the curve, its tags and note, and where it is used."],
     ["Bottom line", "The cleanup limit, Undo delete, messages, and the setting for item names (6.3)."],
 ], [3.5, 13.5])
@@ -116,9 +116,10 @@ table(["Click", "In the ReaCat window", "In a tool's picker"], [
     ["Double-click", "Sends the curve again: it becomes the newest one, so Latest takes it. The line at the bottom says so.", "(nothing extra)"],
     ["Right-click", "Deletes the curve (all selected curves if it is one of them). It goes to the trash, and Undo delete at the bottom brings the last deletion back.", "(nothing extra)"],
 ], [2.6, 8.6, 5.8])
+p("The same as a double-click is the green button **Send** under the large picture in the information of a selected curve. It makes the curve the newest one, so that **Latest** in ReaMaskM, ReaShapeM, MinervaCL and every other tool takes exactly that curve: you find the shape you need here, press Send, and in the tool you press Latest, with no second search. The bottom line says what was sent. (A curve that you send moves to the front of the list, because the list is ordered by the day a curve was last sent.)")
 h2("Notes, keeping and cleaning up")
 p("A selected curve has a **note** field (one line, kept when you leave the field) and a box **keep**: a curve that is kept is never proposed by the cleanup.")
-p("The catalogue can grow. The box at the bottom, **suggest a cleanup above this many entries**, holds your limit: 2000 to begin with, any number you type, and 0 means never. When the catalogue holds more, the bottom line shows the number in red with the button **Clean up...**. That window lists the oldest curves first: first those that are not used in the open project, and only after them the used ones. Curves that you keep are never in the list. Untick what you want to keep, and press **Move to the trash**. Nothing is deleted without that press, and Undo delete brings it back.")
+p("The catalogue can grow. The box at the bottom, **max entries**, holds your limit: when the catalogue grows beyond it a cleanup is suggested. It is 2000 to begin with, any number you type, and 0 means never. When the catalogue holds more, the bottom line shows the number in red with the button **Clean up...**. That window lists the oldest curves first: first those that are not used in the open project, and only after them the used ones. Curves that you keep are never in the list. Untick what you want to keep, and press **Move to the trash**. Nothing is deleted without that press, and Undo delete brings it back.")
 
 h1("Sending curves")
 h2("From ReaNvelopes")
@@ -136,7 +137,7 @@ h1("Taking curves")
 h2("Latest and ReaCat...")
 p("Every tool that takes curves offers the same two ways: two buttons, or, in ReaMaskM and ReaShapeM, two entries of one dropdown (5.3).")
 bullets([
-    "**Latest** takes the newest curve that the tool can use, from any tool. Use it when you have just sent a curve and want it at once. The tool shows what it took, for example: took Lorenz Attractor x (Night Piece).",
+    "**Latest** takes the newest curve that the tool can use, from any tool. Use it when you have just sent a curve and want it at once, or after you pressed Send on a curve in the ReaCat window (3.4). The tool shows what it took, for example: took Lorenz Attractor x (Night Piece).",
     "**ReaCat...** opens the catalogue as pictures, with search, tags and dates, in a window of its own or under the buttons. A click on a picture takes that curve, also when a newer one with the same name exists.",
 ])
 h2("MinervaCL")
@@ -148,13 +149,14 @@ p("A curve in the catalogue is always between 0 and 1. Some tools also say what 
 
 h1("Used in this project")
 h2("The red mark")
-p("A curve that is used in the open project has a **red border and a red dot** in its picture. The line above the pictures says how many curves are used. Search **used:** to list them. A tool marks a curve as used when it takes it into a parameter, an item or an envelope, or writes it into the project.")
+p("A curve that is used in the open project has a **red border** around its picture. The line above the pictures says how many curves are used. Search **used:** to list them. A tool marks a curve as used when it takes it into a parameter, an item or an envelope, or writes it into the project.")
+note("While a used curve is selected (green or orange border) or under the pointer (white border), the border shows that colour and not red. The information then still says used in this project.")
 note("The mark follows the content of the curve. If two curves in the catalogue are exactly the same line under different names, both are red when one of them is used.")
 h2("Where it is used")
 p("Select a curve that is red: the information shows **used in this project** and a line for every place, with the tool and the time. For an item or an automation item the button **select** selects it in REAPER and moves the edit cursor to its start. A parameter inside a tool, for example a parameter of MinervaCL, cannot be selected from here, and the line says which tool it is in. A place that no longer exists, because you deleted the item, is shown in red as gone; **Forget the places that are gone** removes those lines.")
 h2("On the item")
 p("When a tool uses a curve on a MIDI item, the item's **notes** get one line: ReaCat: Lorenz Attractor x, taken 2026-11-23 10:15, project Night Piece. Open the item's notes in REAPER to read it. A newer take of the same curve replaces its own line and nothing else in your notes. An automation item has no notes, so for it the information is only in ReaCat.")
-p("If you want the name of the curve in the name of the item too, tick the box at the bottom of the ReaCat window: **Also add the curve to the item's name when a tool uses it on an item**. The name then ends with + ReaCat: Lorenz Attractor x. It is off to begin with, so your own item names stay as they are.")
+p("If you want the name of the curve in the name of the item too, tick the box at the bottom of the ReaCat window: **Curve name on item** (the name is added when a tool uses a curve on an item). The name then ends with + ReaCat: Lorenz Attractor x. It is off to begin with, so your own item names stay as they are.")
 h2("Saved with the project")
 p("This record is kept inside the project file. When you take a curve, REAPER sees the project as changed and asks to save it when you close, so the red marks come back when you open the project again. The marks need the curves themselves to be in the catalogue. On a computer where the catalogue is empty, nothing shows red until the curves are back (7.2).")
 
