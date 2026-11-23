@@ -140,6 +140,23 @@ check("the deletions are kept for Undo delete", #st.deleted == 2)
 for _, id in ipairs(table.remove(st.deleted)) do Cat.undelete(id) end
 check("Undo delete brings back the last deletion", #Cat.list() == n0 - 1)
 
+-- the receiver: Latest and accept
+local f1 = P.latest({})
+check("latest: the newest entry of all", f1 and f1.id == Cat.list()[1].id)
+local fr = P.latest({ kind = "rule" })
+check("latest: the newest of a kind", fr and fr.kind == "rule")
+local fa = P.latest({ accept = function(h) return h.kind == "curve" and h.name == "two" end })
+check("latest: with accept", fa and fa.name == "two")
+check("latest: nothing accepted gives nil", P.latest({ accept = function() return false end }) == nil)
+check("latest: rulekind", (P.latest({ kind = "rule", rulekind = "rhythm" }) or {}).name == "Pulse")
+st.dirty = true
+P._refresh(st, { accept = function(h) return h.name == "two" end, acceptKey = "k1" })
+check("the picker list obeys accept", #st.list == 1 and st.list[1].name == "two")
+P._refresh(st, { accept = function(h) return h.kind == "rule" end, acceptKey = "k2" })
+check("and a new acceptKey refreshes it", #st.list == 2)
+P._refresh(st, {})
+check("without accept the list is whole again", #st.list > 2)
+
 -- the label under a thumbnail: the module first, the name always readable
 check("label: module first, then the name", P.label({ source = "Lorenz Attractor", name = "x" }, 13) == "Lorenz Att… x", P.label({ source = "Lorenz Attractor", name = "x" }, 13))
 check("label: a short source stays whole", P.label({ source = "Sieve", name = "Gate" }, 13) == "Sieve Gate")

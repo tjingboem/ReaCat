@@ -13,7 +13,8 @@
 --   Information comes up on screen in the panel under the grid, not as a tooltip.
 -- ============================================================
 
-local Cat = require("ReaCat")
+local okCat, Cat = pcall(require, "ReaCat")
+if not okCat then Cat = require("core.ReaCat") end        -- a tool that keeps the lib in core/ (ReaAC)
 local R = reaper
 
 local P = {}
@@ -56,7 +57,9 @@ local function dayAgo(n) return os.date("%Y-%m-%d", os.time() - n * 86400) end
 
 local function refresh(st, opts)
   local stamp, edit = Cat.stamp(), Cat.editStamp()
-  if st.kind ~= opts.kind or st.rulekind ~= opts.rulekind then st.kind, st.rulekind, st.dirty = opts.kind, opts.rulekind, true end
+  if st.kind ~= opts.kind or st.rulekind ~= opts.rulekind or st.acceptKey ~= opts.acceptKey then
+    st.kind, st.rulekind, st.acceptKey, st.dirty = opts.kind, opts.rulekind, opts.acceptKey, true
+  end
   if not st.dirty and stamp == st.lastStamp and edit == st.lastEdit then return end
   st.dirty, st.lastStamp, st.lastEdit = false, stamp, edit
 
@@ -79,6 +82,7 @@ local function refresh(st, opts)
     local keep = true
     if opts.kind and e.kind ~= opts.kind then keep = false end
     if keep and opts.rulekind and e.rulekind ~= opts.rulekind then keep = false end
+    if keep and opts.accept and not opts.accept(e) then keep = false end
     if keep and from and day < from then keep = false end
     if keep and to and day > to then keep = false end
     if keep and match and not match(e) then keep = false end
@@ -539,7 +543,7 @@ function P.draw(ctx, st, opts)
   local panelH = opts.panelH or 196
   local bottomH = opts.browser and 34 or 0
   local used = select(2, R.ImGui_GetContentRegionAvail(ctx))
-  local gridH = math.max(80, (opts.height and math.min(opts.height, used) or used) - panelH - bottomH - 12)
+  local gridH = opts.gridH or math.max(80, (opts.height and math.min(opts.height, used) or used) - panelH - bottomH - 12)
   local taken = grid(ctx, st, opts, gridH)
 
   infoPanel(ctx, st, opts, st.hover or (st.focus and (function() for _, e in ipairs(st.list) do if e.id == st.focus then return e end end end)()), panelH)
@@ -558,6 +562,57 @@ function P.draw(ctx, st, opts)
     if st.msg and R.time_precise() - st.msgAt < 6 then
       R.ImGui_SameLine(ctx, 0, 12)
       R.ImGui_TextColored(ctx, C.ok, st.msg)
+    end
+  end
+  return taken
+end
+
+-- ---------------------------------------------------------------- the receiver's two ways to take
+
+-- opts: kind / rulekind / accept(header) -> true: what this receiver can take (accept needs an acceptKey, a word that changes with it)
+local function accepted(h, opts)
+  if opts.kind and h.kind ~= opts.kind then return false end
+  if opts.rulekind and h.rulekind ~= opts.rulekind then return false end
+  if opts.accept and not opts.accept(h) then return false end
+  return true
+end
+
+-- The newest entry the receiver can take, from any source (the header only), or nil.
+function P.latest(opts)
+  opts = opts or {}
+  for _, h in ipairs(Cat.list()) do            -- newest first
+    if accepted(h, opts) then return h end
+  end
+  return nil
+end
+
+-- Two buttons: "Latest" takes the newest entry the receiver accepts; "ReaCat..." opens the picker under the buttons.
+-- Returns nil, or { id =, entry = (ReaCat.get), originalRange = true | false, how = "latest" | "picked" } on the frame something was taken.
+function P.receiver(ctx, st, opts)
+  opts = opts or {}
+  local taken
+  if R.ImGui_Button(ctx, "Latest##rclatest", 80, 0) then
+    local h = P.latest(opts)
+    local e = h and Cat.get(h.id)
+    if e then taken = { id = h.id, entry = e, originalRange = false, how = "latest" } st.rOpen, st.rmsg = false, nil
+    else st.rmsg = "nothing to take yet" end
+  end
+  R.ImGui_SameLine(ctx, 0, 6)
+  local on = st.rOpen
+  if on then R.ImGui_PushStyleColor(ctx, R.ImGui_Col_Button(), 0x2E6BA8FF) end
+  if R.ImGui_Button(ctx, "ReaCat...##rcopen", 90, 0) then st.rOpen, st.rmsg = not st.rOpen, nil end
+  if on then R.ImGui_PopStyleColor(ctx) end
+  if st.rmsg then
+    R.ImGui_SameLine(ctx, 0, 10)
+    R.ImGui_TextColored(ctx, C.dim, st.rmsg)
+  end
+  if st.rOpen then
+    R.ImGui_Dummy(ctx, opts.width or 680, 1)
+    local t = P.draw(ctx, st, { kind = opts.kind, rulekind = opts.rulekind, accept = opts.accept, acceptKey = opts.acceptKey,
+                                gridH = opts.gridH or 230, panelH = opts.panelH })
+    if t then
+      local e = Cat.get(t.id)
+      if e then taken = { id = t.id, entry = e, originalRange = t.originalRange, how = "picked" } st.rOpen = false end
     end
   end
   return taken

@@ -74,6 +74,25 @@ local function loop3()
 end
 reaper.defer(loop3)
 
+-- the receiver buttons (Latest / ReaCat...) with the picker open, as a tool draws them inside a popup-like window
+local ctx4 = reaper.ImGui_CreateContext("ReaCat receiver test")
+local st4 = Picker.new()
+st4.rOpen = true
+local took
+local function loop4()
+  reaper.ImGui_SetNextWindowPos(ctx4, 2400, 20, reaper.ImGui_Cond_FirstUseEver())
+  reaper.ImGui_SetNextWindowSize(ctx4, 720, 520, reaper.ImGui_Cond_FirstUseEver())
+  local vis, open = reaper.ImGui_Begin(ctx4, "receiver test", true)
+  if vis then
+    reaper.ImGui_Text(ctx4, "Take a curve or a rule")
+    local t = Picker.receiver(ctx4, st4, { accept = function(e) return e.kind == "curve" end, acceptKey = "smoke" })
+    if t then took = t end
+    reaper.ImGui_End(ctx4)
+  end
+  if open then reaper.defer(loop4) end
+end
+reaper.defer(loop4)
+
 -- after some frames: a search, a tag, a bad search; then the screenshot; then the end
 local step = 0
 local function watch()

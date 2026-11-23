@@ -4,6 +4,7 @@
 local COPIES = {
   { "lib/ReaCat.lua", "../ReaNvelopes/lib/ReaCat.lua" },
   { "lib/ReaCat.lua", "../ReaAC/core/ReaCat.lua" },
+  { "lib/ReaCatPicker.lua", "../ReaAC/core/ReaCatPicker.lua" },
 }
 local function read(p) local f = io.open(p, "rb") if not f then return nil end local s = f:read("a") f:close() return s end
 local bad = 0
