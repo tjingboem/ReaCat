@@ -65,3 +65,7 @@ The old one-slot place (`CurveShare.lua`, `tjingboem_curve/current`) can go now:
 - Lib: `findItem(guid)`, `placeExists(rec)`, `selectPlace(rec)` (an item, or an automation item named by `ai:<envelope guid>:<index>`; a parameter inside a tool says where it is); `cleanupCandidates` proposes the entries NOT used in this project first (oldest first), the used ones only after them, favourites never.
 - NOT built: the second colour for "used in another project" (a project only knows its own usage; it would need a record of its own).
 - The copies of `ReaCat.lua` / `ReaCatPicker.lua` in ReaNvelopes, ReaAC, ReaMaskM and ReaShapeM are updated (check_copies: 7 same) and their tests pass again; the live copies are updated.
+
+## Step 4 (23 Nov 2026): ReaCat is a ReaSnap member — tested (selftest_snap 16 in a REAPER of its own; ReaSnap's run_selftest 23), NOT tried by tjingboem, committed in part
+`lib/ReaSnap_Integration.lua` = pieces 2 (title "ReaCat #n") and 5 (Close All); `ReaCat.lua` keeps to ONE window (ExtState `ReaCat_Window`: a stamp renewed by the open window's own frame loop twice a second, older than 2 s = gone; a second start sets `focus` and ends, the open window raises itself); without ReaSnap the window is plainly "ReaCat". ReaSnap's `KNOWN_SCRIPTS.ReaCat` holds the command id of `~/Claude/ReaCat/ReaCat.lua` (loaded from the repo folder).
+NEXT: step 5, Capture and Restore of the project's catalogue entries by ReaSnap (`ReaCat.exportProject`, `ReaCat.restore`); then step 6 (retire the old one-slot place).

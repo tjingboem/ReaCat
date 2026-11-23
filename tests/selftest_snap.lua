@@ -39,6 +39,17 @@ local ok0, err0 = pcall(function()
   report(titles[#titles] == "ReaCat #3", "the window title carries the instance number", titles[#titles])
   report(#queue == 1, "the window is open (it has its next frame)")
 
+  -- one window: a second start while this one is open hands over and ends (it still reads and clears the launcher's keys)
+  reaper.SetExtState("ReaSculpt_Registry", "pending_ReaCat_instance_number", "4", false)
+  package.loaded["ReaSnap_Integration"] = nil
+  local okSecond = pcall(dofile, REPO .. "/ReaCat.lua")
+  report(okSecond and #queue == 1, "a second start while the window is open opens no second window", #queue)
+  report(reaper.GetExtState("ReaCat_Window", "focus") == "1", "it asks the open window to come to the front")
+  report(reaper.GetExtState("ReaSculpt_Registry", "pending_ReaCat_instance_number") == "", "and it cleared the launcher's key")
+  frames(2)
+  report(reaper.GetExtState("ReaCat_Window", "focus") == "", "the open window answered the request")
+  report(reaper.GetExtState("ReaCat_Window", "open") == "1" and tonumber(reaper.GetExtState("ReaCat_Window", "stamp")) ~= nil, "and keeps its stamp")
+
   -- a Close All for another project leaves it alone
   local t = reaper.time_precise() + 1
   reaper.SetExtState("ReaSculpt_Registry", "close_ReaCat_signal", "proj-B|" .. string.format("%.3f", t), false)
@@ -57,6 +68,7 @@ local ok0, err0 = pcall(function()
     local t0 = reaper.time_precise() while reaper.time_precise() - t0 < 0.01 do end
   end
   report(closed, "Close All for this project ends the window's frame loop")
+  report(reaper.GetExtState("ReaCat_Window", "open") == "", "a closed window removes its stamp (a new one can open)")
   reaper.DeleteExtState("ReaSculpt_Registry", "close_ReaCat_signal", false)
 
   -- opened the old way (no keys): a plain title, and Close All never fires
