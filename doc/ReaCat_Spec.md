@@ -66,7 +66,7 @@ points
 | `saved` | all | When the entry was first made (`YYYY-MM-DD HH:MM:SS`, local time). |
 | `sent` | all | When it was last sent. A send of identical content (same `hash`) only updates this line. **Newest = highest `sent`.** |
 | `beats` | curve (optional) | The length of the curve in beats, if the sender knows it. A receiver may use it or ignore it. |
-| `range` | curve (optional) | `lo,hi`: what 0 and 1 stood for at the sender (information, e.g. the pitch range of a walk). Never applied by the catalogue. |
+| `range` | curve (optional) | `lo,hi`: what 0 and 1 stood for at the sender (e.g. the pitch range of a walk). The catalogue never applies it; a receiver may offer "Original range" (section 7). |
 | `unit` | curve (optional) | A word for the values (information). |
 | `tags` | all (optional) | Comma separated words, no commas inside a tag. Compared without case. |
 | `note` | all (optional) | One free text. |
@@ -97,6 +97,7 @@ ExtState section `ReaCat` (not persistent; the files are):
 - `stamp`: a number that goes up by one with every send. A receiver reads it from its own frame loop (at most four times a second; one cheap read,
   no background script) and looks at the catalogue only when it changed.
 - `last`: the id of the entry sent last.
+- `edit`: goes up by one when tags, note or `fav` of an entry are changed (so an open picker or browser refreshes its list; links ignore it).
 
 ## 5. The shared lib `ReaCat.lua`
 
@@ -109,8 +110,11 @@ ReaCat.send{ kind="rule",  source=, name=, text=, rulekind= }                   
 ReaCat.list(filter)      -> array of headers, newest first   (cheap: reads the header only)
 ReaCat.get(id)           -> entry with points / text
 ReaCat.newest(source, name)  -> id | nil                (what a link follows)
+ReaCat.query(text)       -> match(header) function | nil, problem   (the boolean search, 8.1)
 ReaCat.stamp()           -> string
-ReaCat.update(id, {tags=, note=, fav=})   ReaCat.delete(id)   ReaCat.undelete(id)
+ReaCat.update(id, {tags=, addtags=, removetags=, note=, fav=})   (addtags / removetags: lists; adds are deduplicated without case)
+ReaCat.tags()            -> every tag in the catalogue with its count (for the suggestions)
+   ReaCat.delete(id)   ReaCat.undelete(id)
 ```
 
 - `send` writes to `<name>.tmp` and renames, so a reader never sees half a file. A missing folder is created.
@@ -137,6 +141,10 @@ ReaCat.update(id, {tags=, note=, fav=})   ReaCat.delete(id)   ReaCat.undelete(id
 - A receiver turns the points into what it needs: ReaMaskM / ReaShapeM lay them over the whole X and Y of their envelope (as Take Curve does now);
   MinervaCL samples them into a Draw or Choose (`E.importSeries`) or keeps the shape.
 - **Link**: a receiver may remember `source` + `name` and follow `ReaCat.newest(source, name)` when `stamp` changes (MinervaCL's "Linked" button works this way).
+- **Scale back to the original range**: when an entry has `range=lo,hi`, the picker shows it on screen ("0 = lo, 1 = hi", with `unit`) and the receiver may offer
+  "Original range": it maps `v` to `lo + v * (hi - lo)` instead of laying 0..1 over its own range. The picker hands the receiver the entry with `range` and `unit`;
+  the mapping is the receiver's (a receiver without a real value scale, or whose parameter cannot hold the range, does not offer it). Without `range` the choice is not shown.
+  The default stays "as sent" (0..1 over the receiver's own range).
 - The default of every picker is the newest entry, so "take the last one I sent" stays one click.
 
 ## 8. The ReaCat tool (the browser)
@@ -144,10 +152,39 @@ ReaCat.update(id, {tags=, note=, fav=})   ReaCat.delete(id)   ReaCat.undelete(id
 A window of its own (`ReaCat.lua`), pin / window place / one window as the other tools, ReaSnap integration pieces as far as they make sense (nothing is written on an item).
 
 - Grid of thumbnails, newest first; sort by date or by source.
-- Search: date (today, last 7 days, a range), tags (click tags; AND), text over name, source, tags and note.
-- Hover: information and tags. Click: take it (as the current "newest": it only moves `sent`; nothing is copied). Shift+click: edit tags and note. Right-click: delete (to `_trash/`), "Undo delete" at the bottom.
+- Search: date (today, last 7 days, a range) and a search box with boolean search (8.1). Clicking a tag adds `tag:"<tag>"` to the box, joined with AND.
+  Tags are shown as typed and compared without case.
+- **Cleanup suggestion**: when the catalogue holds more entries than the user's limit, ReaCat shows a line "N entries (limit L): clean up?" which opens the list of
+  the oldest entries without `fav` to choose from. The limit is **an option the user can change** in ReaCat's window (a number; **default 2000**; `0` = never suggest).
+  Stored in ExtState section `ReaCat`, key `cleanup_after`, persistent. Nothing is deleted without the user's click, and deleted entries go to `_trash/`.
+- Hover: information and tags. Click: take it (as the current "newest": it only moves `sent`; nothing is copied). Shift+click: edit tags and note.
+  **Tags can be added (and removed) at any time, also long after the send:** the editor has an "add tag" field that suggests the tags already in the catalogue as you type;
+  with several entries ticked (Ctrl+click) one tag can be added to, or removed from, all of them at once. Automatic tags can be removed too. The same "add tag" is in the
+  picker's hover panel, so a receiver can tag an entry right after taking it ("this one worked for the bridge"). An edit rewrites the file in place (same id, same `saved`; `sent` is not changed)
+  and does not bump the stamp of a send, only a separate `edit` counter, so links do not move. Right-click: delete (to `_trash/`), "Undo delete" at the bottom.
 - Star = `fav`. A cleanup offers old entries without `fav` and never deletes without asking.
 - The browser also **sends**: a click on an entry sets it as newest, so a receiver with a link takes it.
+
+### 8.1 Boolean search
+
+One search box, the same in ReaCat and in every picker (the matcher is in the lib: `ReaCat.query(text)` returns a function that says yes or no for a header, so all tools search identically).
+
+| you write | it means |
+|---|---|
+| `lorenz` | the word appears in the name, source, tags or note (part of a word is enough, case ignored) |
+| `lorenz smooth` | both (a space is AND) |
+| `lorenz AND smooth` | both (same) |
+| `lorenz OR rossler` | either |
+| `NOT step` or `-step` | not this |
+| `( lorenz OR rossler ) AND smooth` | brackets group; without brackets NOT binds first, then AND, then OR |
+| `"first idea"` | a phrase in quotes |
+| `tag:smooth` | only a tag, the whole tag (`tag:"my tag"` for several words) |
+| `source:ReaNvelopes`, `name:x`, `note:bridge` | only that field (`source` and `name` match part of the text, `note` too) |
+
+- The operators AND, OR, NOT are written in capitals; `and`, `or`, `not` are ordinary words.
+- A search that does not parse (an open bracket, a quote that never closes) shows the problem in red under the box and **leaves the list unfiltered**; it never errors.
+- The date filter is separate from the box (buttons / a range) and is joined to the search with AND.
+- The parser is written by hand (no `load()` of the text).
 
 ## 9. Migration (nothing before it is tested in REAPER by tjingboem)
 
@@ -161,8 +198,11 @@ Each step: tested offline first, then by him in REAPER; commit and push only on 
 
 ## 10. Open points (his to decide)
 
-- Is the catalogue folder in `Data/ReaCat/` right, or somewhere visible (for backup and sharing between machines)?
+- ~~Is the catalogue folder in `Data/ReaCat/` right?~~ **Decided 23 Nov 2026 (tjingboem): yes, `<REAPER resource folder>/Data/ReaCat/`.**
 - `range` and `unit` are information only. Should a receiver be able to offer "scale back to the original range"?
 - A cap: after how many entries does ReaCat start to suggest a cleanup (proposal: 2000)?
 - Tags: lower-case everything, or show as typed (proposal: as typed, compared without case)?
+- ~~Scale back to the original range~~ **Decided 23 Nov 2026: yes**, see section 7.
+- ~~Cleanup suggestion after how many entries~~ **Decided 23 Nov 2026: yes, default 2000, and the user can change it**, see section 8.
+- ~~Tags as typed or lower-cased~~ **Decided 23 Nov 2026: as typed** (compared without case). He also asked for **boolean search**, see section 8.1.
 - Do other kinds follow (a note series, a pattern)? The `kind` key leaves room; none is specified now.
