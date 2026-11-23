@@ -19,6 +19,8 @@ reaper = {
   GetExtState = function(s, k) return ext[s .. "/" .. k] or "" end,
   SetExtState = function(s, k, v) ext[s .. "/" .. k] = v end,
   time_precise = function() return os.clock() end,
+  GetProjExtState = function(_, s, k) local v = ext["proj/" .. s .. "/" .. k] return v and 1 or 0, v or "" end,
+  SetProjExtState = function(_, s, k, v) ext["proj/" .. s .. "/" .. k] = v return 1 end,
 }
 local Cat = require("ReaCat")
 local P = require("ReaCatPicker")
@@ -156,6 +158,20 @@ P._refresh(st, { accept = function(h) return h.kind == "rule" end, acceptKey = "
 check("and a new acceptKey refreshes it", #st.list == 2)
 P._refresh(st, {})
 check("without accept the list is whole again", #st.list > 2)
+
+-- used entries: the red borders
+st.dirty = true
+P._refresh(st, {})
+check("nothing is used at first", st.nUsed == 0)
+local usedEntry = entry(b)
+Cat.useAdd{ hash = usedEntry.hash, what = "param", guid = "p", tool = "T", label = "x" }
+P._refresh(st, {})
+check("a used entry is flagged (the usage change refreshes by itself)", st.used[usedEntry.hash] ~= nil and st.nUsed >= 1, st.nUsed)
+st.query, st.dirty = "used:", true
+P._refresh(st, {})
+check("the search used: lists only the used", #st.list >= 1 and (function() for _, e in ipairs(st.list) do if not st.used[e.hash] then return false end end return true end)())
+st.query, st.dirty = "", true
+P._refresh(st, {})
 
 -- the label under a thumbnail: the module first, the name always readable
 check("label: module first, then the name", P.label({ source = "Lorenz Attractor", name = "x" }, 13) == "Lorenz Att… x", P.label({ source = "Lorenz Attractor", name = "x" }, 13))

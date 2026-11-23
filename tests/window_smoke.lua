@@ -27,6 +27,12 @@ Cat.send{ kind = "rule", source = "Markov", name = "State", rulekind = "value", 
 Cat.send{ source = "ReaNvelopes", name = "RAND", points = { { 0, 0.5, 2 }, { 0.3, 0.9, 2 }, { 0.6, 0.1, 2 }, { 1, 0.6 } }, range = { -12, 12 }, unit = "semitones", tags = "bridge" }
 report(#Cat.list() == 12, "12 entries", #Cat.list())
 
+-- used in this project: the red borders and the list of places (one place inside a tool, one item that no longer exists)
+local all = Cat.list()
+for i = 1, 3 do Cat.useAdd{ hash = all[i].hash, what = "param", guid = "demo" .. i, tool = "MinervaCL", label = all[i].name } end
+Cat.useAdd{ hash = all[2].hash, what = "item", guid = "{NO-SUCH-ITEM}", tool = "ReaNvelopes", label = all[2].name }
+report(Cat.usedHashes()[all[2].hash] == 2, "the usage record works in the real project", tostring(Cat.usedHashes()[all[2].hash]))
+
 -- the real window: ReaCat.lua itself, its frame loop watched
 reaper.get_action_context = function() return true, REPO .. "/ReaCat.lua", 0, 0, 0, 0, 0 end
 local frames, errors = 0, {}
@@ -64,7 +70,7 @@ local ctx3 = reaper.ImGui_CreateContext("ReaCat browser test")
 local st3 = Picker.new()
 local function loop3()
   reaper.ImGui_SetNextWindowPos(ctx3, 1320, 590, reaper.ImGui_Cond_FirstUseEver())
-  reaper.ImGui_SetNextWindowSize(ctx3, 900, 470, reaper.ImGui_Cond_FirstUseEver())
+  reaper.ImGui_SetNextWindowSize(ctx3, 900, 560, reaper.ImGui_Cond_FirstUseEver())
   local vis, open = reaper.ImGui_Begin(ctx3, "browser test", true)
   if vis then
     Picker.draw(ctx3, st3, { browser = true })

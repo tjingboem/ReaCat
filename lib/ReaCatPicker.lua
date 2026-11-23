@@ -21,7 +21,7 @@ local P = {}
 
 local C = {
   bg = 0x14181CFF, line = 0x7FB6FFFF, border = 0x3C4650FF, hover = 0xFFFFFFFF, sel = 0xF0A030FF, focus = 0x58D68DFF,
-  dim = 0x9AA4AEFF, err = 0xFF7070FF, ok = 0x70D090FF, ruletext = 0xC8B8F0FF, fav = 0xFFD040FF, amber = 0xA86A00FF, amberOn = 0xD98C00FF,
+  dim = 0x9AA4AEFF, err = 0xFF7070FF, ok = 0x70D090FF, ruletext = 0xC8B8F0FF, fav = 0xFFD040FF, used = 0xE04848FF, amber = 0xA86A00FF, amberOn = 0xD98C00FF,
 }
 
 -- a tag is a small button with round ends (a pill)
@@ -76,6 +76,9 @@ local function refresh(st, opts)
 
   local all = Cat.list()
   st.total = #all
+  st.used = Cat.usedHashes()                       -- which entries are used in this project (the red borders)
+  st.nUsed = 0
+  for _, e in ipairs(all) do if st.used[e.hash] then st.nUsed = st.nUsed + 1 end end
   local out, counts, spelling, projects = {}, {}, {}, {}
   for _, e in ipairs(all) do
     local day = e.sent:sub(1, 10)
@@ -350,6 +353,38 @@ local function infoPanel(ctx, st, opts, shown, h)
       R.ImGui_PopTextWrapPos(ctx)
     end
   end
+  -- where this entry is used in the open project: a click selects the place in REAPER
+  local places = (st.used and st.used[shown.hash]) and Cat.usedBy(shown.hash) or {}
+  if #places > 0 then
+    local now = R.time_precise()
+    st.pc = st.pc or {}
+    local pc = st.pc[shown.hash]
+    if not pc or pc.edit ~= st.lastEdit or now - pc.t > 2 then      -- looked up again every two seconds, and when the usage changes
+      pc = { edit = st.lastEdit, t = now, exists = {} }
+      for i, rec in ipairs(places) do pc.exists[i] = Cat.placeExists(rec) end
+      st.pc[shown.hash] = pc
+    end
+    R.ImGui_TextColored(ctx, C.used, string.format("used in this project: %d place%s", #places, #places == 1 and "" or "s"))
+    local gone = 0
+    for i, rec in ipairs(places) do
+      if i > 8 then R.ImGui_TextColored(ctx, C.dim, "...") break end
+      local exists = pc.exists[i] ~= false
+      if not exists then gone = gone + 1 end
+      local what = (rec.what == "item") and "item" or (rec.what == "ai") and "automation item" or ("in " .. ((rec.tool ~= "") and rec.tool or "a tool"))
+      R.ImGui_TextColored(ctx, exists and C.dim or C.err, string.format("%s: %s, %s%s", rec.tool, what, rec.date, exists and "" or "  (gone)"))
+      if exists and rec.what ~= "param" then
+        R.ImGui_SameLine(ctx, 0, 8)
+        if pill(ctx, "select##use" .. i) then
+          local ok, why = Cat.selectPlace(rec)
+          if not ok then say(st, why) end
+        end
+      end
+    end
+    if gone > 0 and opts.browser and pill(ctx, "Forget the places that are gone##forget") then
+      Cat.usePrune(Cat.placeExists)
+      st.dirty, st.pc = true, nil
+    end
+  end
   R.ImGui_EndGroup(ctx)
   R.ImGui_EndChild(ctx)
 end
@@ -430,9 +465,11 @@ local function grid(ctx, st, opts, h)
       R.ImGui_InvisibleButton(ctx, "##t", tw, th + labelH)
       local hovered = R.ImGui_IsItemHovered(ctx)
       local border
-      if st.sel[e.id] then border = C.sel elseif st.focus == e.id then border = C.focus end
+      local isUsed = st.used and st.used[e.hash] ~= nil
+      if st.sel[e.id] then border = C.sel elseif st.focus == e.id then border = C.focus elseif isUsed then border = C.used end
       if hovered then st.hover, border = e, C.hover end
       P.picture(dl, x, y, tw, th, full(st, e.id), border)
+      if isUsed then R.ImGui_DrawList_AddCircleFilled(dl, x + 7, y + 7, 4, C.used) end        -- red also when another border wins
       if e.fav then R.ImGui_DrawList_AddText(dl, x + tw - 14, y + 2, C.fav, "*") end
       R.ImGui_DrawList_AddText(dl, x + 2, y + th + 1, C.dim, P.label(e, math.floor(tw / 7)))
       if hovered then
@@ -532,6 +569,10 @@ function P.draw(ctx, st, opts)
   if sch then st.sort, st.dirty = sv, true end
   R.ImGui_SameLine(ctx, 0, 12)
   R.ImGui_TextColored(ctx, C.dim, string.format("%d of %d", #st.list, st.total))
+  if (st.nUsed or 0) > 0 then
+    R.ImGui_SameLine(ctx, 0, 8)
+    R.ImGui_TextColored(ctx, C.used, string.format("%d used in this project", st.nUsed))
+  end
   if st.query ~= "" or st.dateMode ~= 0 then
     R.ImGui_SameLine(ctx, 0, 12)
     if R.ImGui_SmallButton(ctx, "Clear##clr") then st.query, st.dateMode, st.dirty = "", 0, true end
@@ -540,7 +581,7 @@ function P.draw(ctx, st, opts)
   chipsRow(ctx, st)
 
   -- the grid takes what the panel and the bottom line leave
-  local panelH = opts.panelH or 196
+  local panelH = opts.panelH or (opts.browser and 250 or 196)   -- the browser also lists where an entry is used
   local bottomH = opts.browser and 34 or 0
   local used = select(2, R.ImGui_GetContentRegionAvail(ctx))
   local gridH = opts.gridH or math.max(80, (opts.height and math.min(opts.height, used) or used) - panelH - bottomH - 12)

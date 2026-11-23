@@ -6,6 +6,8 @@ os.execute("mkdir -p '" .. root .. "'")
 local ext, persisted, proj = {}, {}, {}
 local guidN = 0
 local items = {}
+local cursor, selectedTrack
+local aitems = { { D_POSITION = 5 }, { D_POSITION = 9 } }
 reaper = {
   GetResourcePath = function() return root end,
   RecursiveCreateDirectory = function(p) os.execute("mkdir -p '" .. p .. "'") return 1 end,
@@ -29,6 +31,25 @@ reaper = {
     if parm == "P_NOTES" then if set then it.notes = val return true end return true, it.notes end
   end,
   GetActiveTake = function(item) return items[item].take end,
+  CountMediaItems = function() local n = 0 for _ in pairs(items) do n = n + 1 end return n end,
+  GetMediaItem = function(_, i) local keys = {} for k in pairs(items) do keys[#keys + 1] = k end table.sort(keys) return keys[i + 1] end,
+  SelectAllMediaItems = function() for _, it in pairs(items) do it.selected = false end end,
+  SetMediaItemSelected = function(item, on) items[item].selected = on end,
+  GetMediaItemInfo_Value = function(item, parm) if parm == "D_POSITION" then return items[item].pos or 0 end return 0 end,
+  SetEditCurPos = function(pos) cursor = pos end,
+  UpdateArrange = function() end,
+  CountTracks = function() return 1 end,
+  GetTrack = function() return "T1" end,
+  SetOnlyTrackSelected = function(tr) selectedTrack = tr end,
+  CountTrackEnvelopes = function() return 1 end,
+  GetTrackEnvelope = function() return "E1" end,
+  GetSetEnvelopeInfo_String = function(env, parm) if parm == "GUID" then return true, "{ENV-1}" end return true, "" end,
+  CountAutomationItems = function() return #aitems end,
+  GetSetAutomationItemInfo = function(env, n, parm, val, set)
+    local a = aitems[n + 1]
+    if set then a[parm] = val return val end
+    return a[parm] or 0
+  end,
   GetSetMediaItemTakeInfo_String = function(take, parm, val, set)
     if parm == "P_NAME" then if set then take.name = val return true end return true, take.name end
   end,
@@ -152,6 +173,49 @@ Cat.markItem("I1", { source = "Lorenz Attractor", name = "y", hash = "hy" }, { t
 check("opts.nameSuffix = false overrides the setting", items["I1"].take.name:find("Attractor y", 1, true) ~= nil and select(2, items["I1"].take.name:gsub("ReaCat:", "")) == 1)
 check("both curves are in the notes", select(2, items["I1"].notes:gsub("ReaCat:", "")) == 2)
 check("markItem refuses nothing", Cat.markItem(nil, { hash = "x" }) == nil and Cat.markItem("I1", {}) == nil)
+
+-- ------------------------------------------------ the places: find, check, select
+check("findItem finds an item by its GUID", Cat.findItem("{ITEM-1}") == "I1" and Cat.findItem("{NOPE}") == nil and Cat.findItem("") == nil)
+check("placeExists: an item", Cat.placeExists({ what = "item", guid = "{ITEM-1}" }) == true and Cat.placeExists({ what = "item", guid = "{NOPE}" }) == false)
+check("placeExists: an automation item", Cat.placeExists({ what = "ai", guid = "ai:{ENV-1}:1" }) == true and Cat.placeExists({ what = "ai", guid = "ai:{ENV-1}:2" }) == false and Cat.placeExists({ what = "ai", guid = "ai:{OTHER}:0" }) == false)
+check("placeExists: a parameter inside a tool counts as there", Cat.placeExists({ what = "param", guid = "x" }) == true)
+items["I1"].pos, items["I1"].selected = 12.5, false
+check("selectPlace: an item is selected and the cursor goes to its start", Cat.selectPlace({ what = "item", guid = "{ITEM-1}" }) == true and items["I1"].selected == true and cursor == 12.5)
+local okGone, whyGone = Cat.selectPlace({ what = "item", guid = "{NOPE}" })
+check("selectPlace: a gone item says so", okGone == false and whyGone:find("gone", 1, true) ~= nil)
+check("selectPlace: an automation item is selected, the cursor goes to it", Cat.selectPlace({ what = "ai", guid = "ai:{ENV-1}:1" }) == true and aitems[2].D_UISEL == 1 and cursor == 9 and selectedTrack == "T1")
+local okP, whyP = Cat.selectPlace({ what = "param", guid = "x", tool = "MinervaCL" })
+check("selectPlace: a parameter inside a tool says where it is", okP == false and whyP:find("MinervaCL", 1, true) ~= nil)
+-- prune uses placeExists
+proj["ReaCat/usage"] = nil
+Cat.useAdd{ hash = "pa", what = "item", guid = "{ITEM-1}", tool = "t" }
+Cat.useAdd{ hash = "pb", what = "item", guid = "{NOPE}", tool = "t" }
+Cat.useAdd{ hash = "pc", what = "param", guid = "p", tool = "t" }
+check("usePrune(placeExists) forgets only the places that are gone", Cat.usePrune(Cat.placeExists) == 1 and #Cat.usage() == 2)
+proj["ReaCat/usage"] = nil
+
+-- ------------------------------------------------ cleanup: the unused first
+os.execute("rm -rf '" .. root .. "/Data/ReaCat'")
+local cl = {}
+for i = 1, 5 do cl[i] = Cat.send{ source = "Clean", name = "c" .. i, points = { { 0, i / 10 }, { 1, 1 } } } end
+Cat.useAdd{ hash = Cat.get(cl[1]).hash, what = "param", guid = "p", tool = "t" }       -- the OLDEST is used
+Cat.update(cl[2], { fav = true })                                                        -- the second is a favourite
+local cand = Cat.cleanupCandidates(2)
+local names = {}
+for _, c in ipairs(cand) do names[#names + 1] = c.name end
+check("cleanup: three over the limit; unused first (oldest first), a favourite never, the used one last", table.concat(names, ",") == "c3,c4,c5", table.concat(names, ","))
+local cand2 = Cat.cleanupCandidates(4)
+local names2 = {}
+for _, c in ipairs(cand2) do names2[#names2 + 1] = c.name end
+check("cleanup: with one over, an unused one goes, not the used oldest", table.concat(names2, ",") == "c3", table.concat(names2, ","))
+local cand3 = Cat.cleanupCandidates(1)
+local names3 = {}
+for _, c in ipairs(cand3) do names3[#names3 + 1] = c.name end
+check("cleanup: when the unused are not enough, the used follow", table.concat(names3, ",") == "c3,c4,c5,c1", table.concat(names3, ","))
+proj["ReaCat/usage"] = nil
+-- (the catalogue was emptied above: the two entries the next tests use are made again)
+a = Cat.send{ source = "Prov", name = "a", points = line }
+b = Cat.send{ source = "Prov", name = "b", points = { { 0, 0, 1 }, { 0.5, 1, 1 }, { 1, 0 } } }
 
 -- ------------------------------------------------ used: in the search
 Cat.setNameSuffixOn(false)
