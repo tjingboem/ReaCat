@@ -297,6 +297,20 @@ local function infoPanel(ctx, st, opts, shown, h)
       end
       R.ImGui_PopStyleColor(ctx, 3)
       R.ImGui_PopStyleVar(ctx)
+      -- Send To MIDI CC (26 Nov 2026, his request): the same curve into the CC lane last clicked in the MIDI editor, over the time selection (else the whole
+      -- item), replacing the events of that lane there; the item is marked as a place where the curve is used. Blue, under Send To Automation Item.
+      R.ImGui_Dummy(ctx, 1, 2)
+      R.ImGui_SetCursorPosX(ctx, R.ImGui_GetCursorPosX(ctx) + (240 - 170) / 2)
+      R.ImGui_PushStyleVar(ctx, R.ImGui_StyleVar_FrameRounding(), 6)
+      R.ImGui_PushStyleColor(ctx, R.ImGui_Col_Button(), 0x2E6BA8FF)
+      R.ImGui_PushStyleColor(ctx, R.ImGui_Col_ButtonHovered(), 0x3A7CC4FF)
+      R.ImGui_PushStyleColor(ctx, R.ImGui_Col_ButtonActive(), 0x275A8EFF)
+      if R.ImGui_Button(ctx, "Send To MIDI CC##sendcc", 170, 0) then
+        local n, msg = Cat.sendToMidiCC(e)
+        say(st, msg)
+      end
+      R.ImGui_PopStyleColor(ctx, 3)
+      R.ImGui_PopStyleVar(ctx)
     end
     -- Resolution (26 Nov 2026, his request): the most points a tool is handed when it takes a curve, shown as a number of points. The catalogue keeps
     -- all of them; this only reduces what is taken (Latest, the pickers, Send To Script). The right end of the slider = all the points of this curve
