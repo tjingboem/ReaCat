@@ -259,6 +259,7 @@ local function infoPanel(ctx, st, opts, shown, h)
     return
   end
   local editing = (st.focus == shown.id)
+  R.ImGui_SetCursorPosX(ctx, R.ImGui_GetCursorPosX(ctx) + 30)     -- everything of the panel 30 px to the right (26 Nov 2026, his request)
   R.ImGui_BeginGroup(ctx)                         -- left: the picture; right: the words (a group, so that the right side starts at the top)
   local x, y = R.ImGui_GetCursorScreenPos(ctx)
   R.ImGui_Dummy(ctx, 240, 120)
@@ -283,14 +284,14 @@ local function infoPanel(ctx, st, opts, shown, h)
     R.ImGui_PopStyleColor(ctx, 3)
     R.ImGui_PopStyleVar(ctx)
     -- Send To Automation Item (26 Nov 2026, his request): writes this curve into the automation item(s) selected in REAPER (replacing their points, scaled to
-    -- the envelope's range, with the Resolution below applied) and marks the item as a place where the curve is used. Blue, under Send To Script.
+    -- the envelope's range, with the Resolution below applied) and marks the item as a place where the curve is used. Green like Send To Script, under it.
     if e and e.kind == "curve" then
       R.ImGui_Dummy(ctx, 1, 2)
       R.ImGui_SetCursorPosX(ctx, R.ImGui_GetCursorPosX(ctx) + (240 - 170) / 2)
       R.ImGui_PushStyleVar(ctx, R.ImGui_StyleVar_FrameRounding(), 6)
-      R.ImGui_PushStyleColor(ctx, R.ImGui_Col_Button(), 0x2E6BA8FF)
-      R.ImGui_PushStyleColor(ctx, R.ImGui_Col_ButtonHovered(), 0x3A7CC4FF)
-      R.ImGui_PushStyleColor(ctx, R.ImGui_Col_ButtonActive(), 0x275A8EFF)
+      R.ImGui_PushStyleColor(ctx, R.ImGui_Col_Button(), 0x2E8B57FF)
+      R.ImGui_PushStyleColor(ctx, R.ImGui_Col_ButtonHovered(), 0x3AA66BFF)
+      R.ImGui_PushStyleColor(ctx, R.ImGui_Col_ButtonActive(), 0x277A4CFF)
       if R.ImGui_Button(ctx, "Send To Automation Item##sendai", 170, 0) then
         local n, msg = Cat.sendToAutomationItems(e)
         say(st, msg)
@@ -298,13 +299,13 @@ local function infoPanel(ctx, st, opts, shown, h)
       R.ImGui_PopStyleColor(ctx, 3)
       R.ImGui_PopStyleVar(ctx)
       -- Send To MIDI CC (26 Nov 2026, his request): the same curve into the CC lane last clicked in the MIDI editor, over the time selection (else the whole
-      -- item), replacing the events of that lane there; the item is marked as a place where the curve is used. Blue, under Send To Automation Item.
+      -- item), replacing the events of that lane there; the item is marked as a place where the curve is used. Green like Send To Script, under Send To Automation Item.
       R.ImGui_Dummy(ctx, 1, 2)
       R.ImGui_SetCursorPosX(ctx, R.ImGui_GetCursorPosX(ctx) + (240 - 170) / 2)
       R.ImGui_PushStyleVar(ctx, R.ImGui_StyleVar_FrameRounding(), 6)
-      R.ImGui_PushStyleColor(ctx, R.ImGui_Col_Button(), 0x2E6BA8FF)
-      R.ImGui_PushStyleColor(ctx, R.ImGui_Col_ButtonHovered(), 0x3A7CC4FF)
-      R.ImGui_PushStyleColor(ctx, R.ImGui_Col_ButtonActive(), 0x275A8EFF)
+      R.ImGui_PushStyleColor(ctx, R.ImGui_Col_Button(), 0x2E8B57FF)
+      R.ImGui_PushStyleColor(ctx, R.ImGui_Col_ButtonHovered(), 0x3AA66BFF)
+      R.ImGui_PushStyleColor(ctx, R.ImGui_Col_ButtonActive(), 0x277A4CFF)
       if R.ImGui_Button(ctx, "Send To MIDI CC##sendcc", 170, 0) then
         local n, msg = Cat.sendToMidiCC(e)
         say(st, msg)
@@ -320,7 +321,7 @@ local function infoPanel(ctx, st, opts, shown, h)
       local cap = Cat.resolution()
       local shownN = (cap == 0 or cap >= n) and n or cap
       R.ImGui_Dummy(ctx, 1, 2)
-      R.ImGui_TextColored(ctx, C.dim, string.format("Resolution: tools take %d of %d points", shownN, n))
+      R.ImGui_TextColored(ctx, C.dim, "Resolution")                                   -- (the slider shows the number of points)
       R.ImGui_SetNextItemWidth(ctx, 240)
       local ch, v = R.ImGui_SliderInt(ctx, "##resolution", shownN, 2, n, "%d")
       if ch then Cat.setResolution(v >= n and 0 or v) end
@@ -338,7 +339,7 @@ local function infoPanel(ctx, st, opts, shown, h)
     end
   end
   R.ImGui_EndGroup(ctx)
-  R.ImGui_SameLine(ctx, 0, 16)
+  R.ImGui_SameLine(ctx, 0, 46)                    -- 16 px, and 30 px more between the picture with its buttons and the words (his request)
   -- the words on the right scroll by themselves; the picture and the Send button on the left stay where they are (tjingboem, 23 Nov 2026)
   local textOpen = R.ImGui_BeginChild(ctx, "##infotext", 0, 0, R.ImGui_ChildFlags_None())
   if textOpen then
@@ -660,7 +661,7 @@ function P.draw(ctx, st, opts)
   chipsRow(ctx, st)
 
   -- the grid takes what the panel and the bottom line leave
-  local panelH = opts.panelH or (opts.browser and 250 or 196)   -- the browser also lists where an entry is used
+  local panelH = opts.panelH or (opts.browser and 305 or 196)   -- the browser also lists where an entry is used, and has the three Send buttons and the Resolution slider (was 250: it scrolled; 340 and 320 were too much)
   local bottomH = opts.browser and 58 or 0
   local used = select(2, R.ImGui_GetContentRegionAvail(ctx))
   local gridH = opts.gridH or math.max(80, (opts.height and math.min(opts.height, used) or used) - panelH - bottomH - 12)

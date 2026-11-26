@@ -48,6 +48,10 @@ reaper.atexit(unstampWindow)
 local ctx = reaper.ImGui_CreateContext("ReaCat")
 local st = Picker.new()
 local lastStamp = reaper.time_precise()
+-- 26 Nov 2026: the shapes above the information panel got 70 px more height (the panel is 20 px lower, the window 50 px higher). A window that was opened before
+-- keeps the size it was saved with, so ONCE (ExtState ReaCat/layout, kept between sessions) the window is made 50 px higher than it was.
+local layoutStage = (reaper.GetExtState(SEC, "layout") == "70px") and 2 or 0      -- 0: read the size, 1: make it higher, 2: done
+local layoutW, layoutH = 980, 760
 
 local function loop()
   local now = reaper.time_precise()
@@ -57,11 +61,17 @@ local function loop()
     reaper.ImGui_SetNextWindowFocus(ctx)                  -- another start asked for this window to come to the front
   end
   reaper.ImGui_SetNextWindowSize(ctx, 980, 760, reaper.ImGui_Cond_FirstUseEver())
+  if layoutStage == 1 then
+    reaper.ImGui_SetNextWindowSize(ctx, layoutW, layoutH + 50, reaper.ImGui_Cond_Always())
+    layoutStage = 2
+    reaper.SetExtState(SEC, "layout", "70px", true)
+  end
   reaper.ImGui_SetNextWindowSizeConstraints(ctx, 560, 420, 2400, 1600)
   local visible, open = reaper.ImGui_Begin(ctx, ReaSnap.windowTitle("ReaCat"), true)
   -- ReaSnap's Close All: checked outside the visible gate, so it also works while the window is collapsed.
   if ReaSnap.shouldClose() then open = false end
   if visible then
+    if layoutStage == 0 then layoutW, layoutH = reaper.ImGui_GetWindowSize(ctx) layoutStage = 1 end
     Picker.draw(ctx, st, { browser = true, kind = "curve" })   -- shapes only: no rules in ReaCat (26 Nov 2026)
     reaper.ImGui_End(ctx)
   end
