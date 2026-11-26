@@ -282,6 +282,22 @@ local function infoPanel(ctx, st, opts, shown, h)
     end
     R.ImGui_PopStyleColor(ctx, 3)
     R.ImGui_PopStyleVar(ctx)
+    -- Send To Automation Item (26 Nov 2026, his request): writes this curve into the automation item(s) selected in REAPER (replacing their points, scaled to
+    -- the envelope's range, with the Resolution below applied) and marks the item as a place where the curve is used. Blue, under Send To Script.
+    if e and e.kind == "curve" then
+      R.ImGui_Dummy(ctx, 1, 2)
+      R.ImGui_SetCursorPosX(ctx, R.ImGui_GetCursorPosX(ctx) + (240 - 170) / 2)
+      R.ImGui_PushStyleVar(ctx, R.ImGui_StyleVar_FrameRounding(), 6)
+      R.ImGui_PushStyleColor(ctx, R.ImGui_Col_Button(), 0x2E6BA8FF)
+      R.ImGui_PushStyleColor(ctx, R.ImGui_Col_ButtonHovered(), 0x3A7CC4FF)
+      R.ImGui_PushStyleColor(ctx, R.ImGui_Col_ButtonActive(), 0x275A8EFF)
+      if R.ImGui_Button(ctx, "Send To Automation Item##sendai", 170, 0) then
+        local n, msg = Cat.sendToAutomationItems(e)
+        say(st, msg)
+      end
+      R.ImGui_PopStyleColor(ctx, 3)
+      R.ImGui_PopStyleVar(ctx)
+    end
     -- Resolution (26 Nov 2026, his request): the most points a tool is handed when it takes a curve, shown as a number of points. The catalogue keeps
     -- all of them; this only reduces what is taken (Latest, the pickers, Send To Script). The right end of the slider = all the points of this curve
     -- (stored as "no limit", so a bigger curve later is not cut by it). The picture above shows what a tool will get.
