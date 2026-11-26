@@ -62,7 +62,7 @@ local function loop()
   -- ReaSnap's Close All: checked outside the visible gate, so it also works while the window is collapsed.
   if ReaSnap.shouldClose() then open = false end
   if visible then
-    Picker.draw(ctx, st, { browser = true })
+    Picker.draw(ctx, st, { browser = true, kind = "curve" })   -- shapes only: no rules in ReaCat (26 Nov 2026)
     reaper.ImGui_End(ctx)
   end
   if open then
