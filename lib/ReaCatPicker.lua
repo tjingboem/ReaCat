@@ -262,24 +262,40 @@ local function infoPanel(ctx, st, opts, shown, h)
   R.ImGui_BeginGroup(ctx)                         -- left: the picture; right: the words (a group, so that the right side starts at the top)
   local x, y = R.ImGui_GetCursorScreenPos(ctx)
   R.ImGui_Dummy(ctx, 240, 120)
-  P.picture(R.ImGui_GetWindowDrawList(ctx), x, y, 240, 120, e)
+  local picE = e
+  if opts.browser and editing and e and Cat.thin then picE = Cat.thin(e, Cat.detail()) end    -- the picture shows what a tool takes (Detail below)
+  P.picture(R.ImGui_GetWindowDrawList(ctx), x, y, 240, 120, picE)
   if opts.browser and editing then
-    -- Send (the ReaCat window only): this curve becomes the newest, so that "Latest" in ReaMaskM, ReaShapeM, MinervaCL and any other tool takes it and nobody has to look for it
+    -- Send To Script (the ReaCat window only; was just "Send" until 26 Nov 2026, renamed at his request because a second button, Send To Automation Item, follows): this curve becomes the newest, so that "Latest" in ReaMaskM, ReaShapeM, MinervaCL and any other tool takes it and nobody has to look for it
     -- here again (the same as a double-click on its picture). Green and small, under the large picture (tjingboem, 23 Nov 2026); what it is for is in the manual, not on the screen.
     R.ImGui_Dummy(ctx, 1, 6)                                                              -- a little space between the picture and the button
-    R.ImGui_SetCursorPosX(ctx, R.ImGui_GetCursorPosX(ctx) + (240 - 70) / 2)          -- in the middle under the large picture (240 px wide)
+    R.ImGui_SetCursorPosX(ctx, R.ImGui_GetCursorPosX(ctx) + (240 - 110) / 2)          -- in the middle under the large picture (240 px wide)
     R.ImGui_PushStyleVar(ctx, R.ImGui_StyleVar_FrameRounding(), 6)
     R.ImGui_PushStyleColor(ctx, R.ImGui_Col_Button(), 0x2E8B57FF)
     R.ImGui_PushStyleColor(ctx, R.ImGui_Col_ButtonHovered(), 0x3AA66BFF)
     R.ImGui_PushStyleColor(ctx, R.ImGui_Col_ButtonActive(), 0x277A4CFF)
-    if R.ImGui_Button(ctx, "Send##sendnewest", 70, 0) then
+    if R.ImGui_Button(ctx, "Send To Script##sendnewest", 110, 0) then
       if Cat.touch(shown.id) then
         st.dirty = true
-        say(st, "sent: " .. shown.source .. " - " .. shown.name .. " (now the newest: Latest takes it)")
+        say(st, "sent to script: " .. shown.source .. " - " .. shown.name .. " (now the newest: Latest takes it)")
       end
     end
     R.ImGui_PopStyleColor(ctx, 3)
     R.ImGui_PopStyleVar(ctx)
+    -- Detail (26 Nov 2026, his request): how many of the points a tool is handed when it takes a curve. The catalogue keeps all of them; this only
+    -- reduces what is taken (Latest, the pickers, Send To Script). 100% = all. The picture above shows what a tool will get.
+    if e and Cat.canThin and Cat.canThin(e) then
+      local pct = Cat.detail()
+      local te = Cat.thin(e, pct)
+      R.ImGui_Dummy(ctx, 1, 2)
+      R.ImGui_TextColored(ctx, C.dim, string.format("Detail: tools take %d of %d points", #te.points, #e.points))
+      R.ImGui_SetNextItemWidth(ctx, 240)
+      local ch, v = R.ImGui_SliderInt(ctx, "##detail", pct, 1, 100, "%d%%")
+      if ch then Cat.setDetail(v) end
+    elseif e and e.kind == "curve" then
+      R.ImGui_Dummy(ctx, 1, 2)
+      R.ImGui_TextColored(ctx, C.dim, "Detail: this curve is taken as it is")
+    end
   end
   -- under the picture: what 0 and 1 stood for, and the Original range choice
   if shown.range then
@@ -661,7 +677,7 @@ end
 -- or nil and a message.
 function P.takeLatest(opts)
   local h = P.latest(opts or {})
-  local e = h and Cat.get(h.id)
+  local e = h and Cat.take(h.id)
   if not e then return nil, "nothing to take yet" end
   return { id = h.id, entry = e, originalRange = false, how = "latest" }
 end
@@ -675,7 +691,7 @@ function P.popup(ctx, st, popupId, opts)
     local t = P.draw(ctx, st, { kind = opts.kind, rulekind = opts.rulekind, accept = opts.accept, acceptKey = opts.acceptKey,
                                 gridH = opts.gridH or 230, panelH = opts.panelH, noRange = opts.noRange })
     if t then
-      local e = Cat.get(t.id)
+      local e = Cat.take(t.id)
       if e then taken = { id = t.id, entry = e, originalRange = t.originalRange, how = "picked" } R.ImGui_CloseCurrentPopup(ctx) end
     end
     R.ImGui_EndPopup(ctx)
@@ -691,7 +707,7 @@ function P.receiver(ctx, st, opts)
   local bh = opts.buttonH or 0
   if R.ImGui_Button(ctx, "Latest##rclatest", 80, bh) then
     local h = P.latest(opts)
-    local e = h and Cat.get(h.id)
+    local e = h and Cat.take(h.id)
     if e then taken = { id = h.id, entry = e, originalRange = false, how = "latest" } st.rOpen, st.rmsg = false, nil
     else st.rmsg = "nothing to take yet" end
   end
@@ -713,7 +729,7 @@ function P.receiver(ctx, st, opts)
     R.ImGui_Dummy(ctx, opts.width or 680, 1)
     local t = P.draw(ctx, st, drawOpts)
     if t then
-      local e = Cat.get(t.id)
+      local e = Cat.take(t.id)
       if e then taken = { id = t.id, entry = e, originalRange = t.originalRange, how = "picked" } st.rOpen = false end
     end
   end

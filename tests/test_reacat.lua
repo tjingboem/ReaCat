@@ -274,6 +274,48 @@ check("touch moves the stamp", Cat.stamp() ~= stBefore)
 check("touch keeps the content", #Cat.get(old1).points >= 2)
 check("touch of nothing", select(1, Cat.touch("nope")) == nil)
 
+-- ------------------------------------------------ Detail: reducing the points a tool takes
+do
+  check("detail defaults to 100", Cat.detail() == 100)
+  check("setDetail keeps and clamps", Cat.setDetail(30) == 30 and Cat.detail() == 30 and Cat.setDetail(500) == 100 and Cat.setDetail(0) == 1)
+  Cat.setDetail(100)
+  -- a smooth S curve of 200 straight pieces
+  local pts = {}
+  for i = 0, 200 do local t = i / 200 pts[#pts + 1] = { t, t * t * (3 - 2 * t) } end
+  local id = Cat.send{ source = "Thin Test", name = "S curve", points = pts }
+  local e = Cat.get(id)
+  local function at(p, t)
+    for k = 1, #p - 1 do
+      if p[k].t <= t and t <= p[k + 1].t then local d = p[k + 1].t - p[k].t return d == 0 and p[k].v or p[k].v + (p[k + 1].v - p[k].v) * (t - p[k].t) / d end
+    end
+    return p[#p].v
+  end
+  check("the curve can be reduced", Cat.canThin(e))
+  check("100% returns the entry itself", Cat.thin(e, 100) == e)
+  for _, pct in ipairs({ 50, 20, 10 }) do
+    local th = Cat.thin(e, pct)
+    local want = math.max(2, math.floor(#e.points * pct / 100 + 0.5))
+    check(pct .. "% keeps " .. want .. " points", #th.points == want, #th.points)
+    check(pct .. "%: the end points stay", th.points[1].t == 0 and th.points[#th.points].t == 1)
+    check(pct .. "%: still in time order", (function() for k = 2, #th.points do if th.points[k].t <= th.points[k - 1].t then return false end end return true end)())
+    local worst = 0
+    for k = 0, 400 do worst = math.max(worst, math.abs(at(th.points, k / 400) - at(e.points, k / 400))) end
+    check(pct .. "%: the shape stays within 3% of the height", worst < 0.03, worst)
+    check(pct .. "%: hash and id stay (usage records still find it)", th.hash == e.hash and th.id == e.id)
+  end
+  check("the entry in the catalogue is not touched", #Cat.get(id).points == #pts)
+  -- a curve with a step or a curved segment is taken as it is
+  local cid = Cat.send{ source = "Thin Test", name = "steps", points = { { 0, 0, 1 }, { 0.3, 1, 0 }, { 0.6, 0.2, 0 }, { 1, 0.9, 0 } } }
+  local ce = Cat.get(cid)
+  check("a curve with steps cannot be reduced", not Cat.canThin(ce) and Cat.thin(ce, 10) == ce)
+  -- take() applies the setting
+  Cat.setDetail(10)
+  check("take applies the Detail setting", #Cat.take(id).points == math.floor(#pts * 0.10 + 0.5), #Cat.take(id).points)
+  Cat.setDetail(100)
+  check("take at 100% gives everything", #Cat.take(id).points == #pts)
+  check("take of nothing", Cat.take("nope") == nil)
+end
+
 -- ------------------------------------------------ clean up the scratch folder and report
 os.execute("rm -rf '" .. root .. "'")
 print(string.format("%d checks passed, %d failed", passed, failed))
