@@ -58,6 +58,7 @@ p("ReaCat is a catalogue of curves. Many of the author's tools make curves: ReaN
 p("A tool that makes a curve sends it to ReaCat. A tool that needs a curve takes one from ReaCat. The two do not have to know each other, and a tool that does not exist yet can use the same catalogue.")
 bullets([
     "**Send.** In a tool that makes curves, the Output target **Send to ReaCat and the world** puts its curves in the catalogue. Nothing is written into your project.",
+    "**Capture.** A shape that is already in your project can be filed too: the cat button in ReaSnap files a selected automation item, or a lane of MIDI CC, as a curve (4.6).",
     "**Keep.** The catalogue keeps every curve with its date, the tool it came from, tags that you can add, and a small picture of its shape.",
     "**Take.** A tool that needs a curve has two buttons: **Latest** takes the newest curve, and **ReaCat...** opens the catalogue as small pictures, so that you can choose.",
     "**Remember.** A curve that a tool took or wrote into your project is marked red in ReaCat, and ReaSnap can bring the curves of a project back on another computer.",
@@ -105,7 +106,7 @@ table(["You write", "It finds"], [
 ], [6.0, 11.0])
 p("The date choice next to the search box is joined to the search with AND. **Clear** takes the search and the date away.")
 h2("Tags")
-p("Every curve gets tags when it is sent: the tool, the name of the curve, and one word for its shape: **straight**, **smooth** or **step**. A curve that a tool wrote into your project also gets **written**.")
+p("Every curve gets tags when it is sent: the tool, the name of the curve, and one word for its shape: **straight**, **smooth** or **step**. A curve that a tool wrote into your project also gets **written**. A curve that was captured from your project with the cat button gets **automation-item** or **midi-cc**, and its tool (source) is Automation Item or MIDI CC.")
 p("The **project** is a tag too, shown in amber: the name of the REAPER project when the curve was sent, without .RPP, or **Unsaved Project** when the project had no file yet. It stays as it was written. It cannot be removed, and it is found by tag:\"name\", by project: and by a plain word.")
 p("Your own tags: select a curve and type in the field **add a tag** (Enter). While you type, tags that already exist and begin the same way are offered as small buttons. A click on a tag in the list of a selected curve (it carries a small x) removes it. Tags can be added or removed at any time, also long after the curve was sent. With several curves selected (3.4) one tag goes to all of them, and the field says so.")
 h2("What the clicks do")
@@ -132,6 +133,19 @@ h2("What a tool writes into the project")
 p("When a tool writes a curve into your project, as an automation item, as MIDI CC or pitch bend, or as note values, it also files a copy in the catalogue, tagged **written**, and marks it as used by the item or the automation item it went to (6). So everything that reached your project is in the catalogue too, ready to be used somewhere else, for example to open a filter or to make a note structure. If filing the copy fails, the write itself is not affected.")
 h2("Sending twice")
 p("The same curve from the same tool and the same name is stored once. Sending it again only makes it the newest. A curve that differs, because you changed a slider and sent again, is a new curve, and the catalogue keeps both. A tool that takes a curve with a link (MinervaCL's Linked) follows the newest one.")
+
+h2("From your project: the cat button in ReaSnap")
+p("The other ways of sending (4.1 to 4.3) make a new curve. The **cat button** files a shape that is already in your project. It is the small cat face in front of **ReaCat** on the Launcher tab of the ReaSnap Browser. Nothing is watched and nothing is picked up in the background: you select, you click the cat, and ReaCat keeps a copy. The project itself is not changed.")
+p("**An automation item.** Select one or more automation items and click the cat. Each one becomes a curve, named after the envelope and the length of the item (for example Cutoff 4 s), with the source Automation Item and the tag automation-item. Only the **shape** is kept, never the settings: an item that has its own LFO is filed as the curve it looks like, not as the speed, strength and phase of the LFO. The values are scaled to 0 to 1 over the range of the envelope, and that range is kept, so that **Original range** (5.4) can scale the curve back.")
+p("**A lane of MIDI CC.** Click the cat when no automation item is selected, with a MIDI editor open: it files the lane that you clicked last in that editor, over the **time selection**. So: open the item in the MIDI editor, click the lane (a CC, pitch bend or channel pressure), make a time selection over the part that you mean in the arrange view or in the editor, and click the cat. The curve is named after the lane and the length (for example CC 1 4 s), with the source MIDI CC and the tag midi-cc.")
+p("**Why the time selection.** A lane of CC mostly has no event exactly at the start and the end of the part that you mean. So the curve takes its value at those two moments from the lane itself: the value the lane holds there, or, when a ramp is running, the value on that ramp. When there is no event before the selection, the curve starts flat at the first event inside it. The events in between keep their place and their shape. The values go from 0 to 1 over the whole range of the lane (0 to 127 for a CC, the whole bend for pitch bend), and that range is kept.")
+bullets([
+    "**Lanes that work:** CC 0 to 127, pitch bend and channel pressure. Other lanes (CC of 14 bits, velocity, program change, text) answer that they are not supported.",
+    "**Shapes:** step, line, slow, fast start and fast end are kept as they are. A Bezier segment is filed as a straight line.",
+    "**Several MIDI channels:** the channel with most events inside the selection is used, and its number is added to the name.",
+])
+p("**What the button tells you.** After a click the cat turns **green** for about a second when a curve was filed, and **red** when nothing was filed. The line at the bottom of the Browser window says what happened, for example 1 shape filed in ReaCat, or make a time selection first. If neither an automation item is selected nor a MIDI editor is open, it says so.")
+p("The curve is now in the catalogue like any other. Press **Send** on it (3.4) and it is the newest curve, so that **Latest** in ReaMaskM, ReaShapeM or MinervaCL takes it.")
 
 h1("Taking curves")
 h2("Latest and ReaCat...")
