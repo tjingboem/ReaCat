@@ -148,3 +148,6 @@ Blue button under Send To Script in the ReaCat window (`Cat.sendToAutomationItem
 - Values are clamped to the lane: the handles of a cubic segment may swing past 0..1, and a fader value past the top explodes (168 seen).
 - Tests: `lua5.4 tests/test_send_ai_offline.lua` (20 checks, fake automation items; the real-REAPER assumptions above were confirmed by his dumps and screenshots).
 
+## Sends are marked as used in every sender (26 Nov 2026) — tried by tjingboem: works; committed
+Rule (his): every curve that is in the catalogue AND comes out of the open project shows the red border. So a SEND records a usage: ReaMaskM (the window's item when it is a ReaMaskM item, else "in ReaMaskM", which Generate turns into the item), ReaShapeM (the same, Apply turns it into the item), ReaNvelopes (`lib/ReaCatSend.lua`, "in ReaNvelopes") and the ReaAC modules (`core/reaac_series.lua` `markSent`, "in ReaAC"; curves only, NOT the rules). The cat button, the S scan, Send To Automation Item and the tools' written curves already did. A curve sent before this has no record: send it again (identical content is not stored twice). Open: nothing known; rules from MinervaCL are not marked (they are not envelopes).
+
