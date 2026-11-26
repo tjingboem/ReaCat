@@ -274,11 +274,11 @@ check("touch moves the stamp", Cat.stamp() ~= stBefore)
 check("touch keeps the content", #Cat.get(old1).points >= 2)
 check("touch of nothing", select(1, Cat.touch("nope")) == nil)
 
--- ------------------------------------------------ Detail: reducing the points a tool takes
+-- ------------------------------------------------ Resolution: the most points a tool takes
 do
-  check("detail defaults to 100", Cat.detail() == 100)
-  check("setDetail keeps and clamps", Cat.setDetail(30) == 30 and Cat.detail() == 30 and Cat.setDetail(500) == 100 and Cat.setDetail(0) == 1)
-  Cat.setDetail(100)
+  check("resolution defaults to no limit (0)", Cat.resolution() == 0)
+  check("setResolution keeps a number and 0/1 mean no limit", Cat.setResolution(30) == 30 and Cat.resolution() == 30 and Cat.setResolution(1) == 0 and Cat.setResolution(0) == 0)
+  Cat.setResolution(0)
   -- a smooth S curve of 200 straight pieces
   local pts = {}
   for i = 0, 200 do local t = i / 200 pts[#pts + 1] = { t, t * t * (3 - 2 * t) } end
@@ -291,28 +291,27 @@ do
     return p[#p].v
   end
   check("the curve can be reduced", Cat.canThin(e))
-  check("100% returns the entry itself", Cat.thin(e, 100) == e)
-  for _, pct in ipairs({ 50, 20, 10 }) do
-    local th = Cat.thin(e, pct)
-    local want = math.max(2, math.floor(#e.points * pct / 100 + 0.5))
-    check(pct .. "% keeps " .. want .. " points", #th.points == want, #th.points)
-    check(pct .. "%: the end points stay", th.points[1].t == 0 and th.points[#th.points].t == 1)
-    check(pct .. "%: still in time order", (function() for k = 2, #th.points do if th.points[k].t <= th.points[k - 1].t then return false end end return true end)())
+  check("no limit returns the entry itself", Cat.thin(e, 0) == e)
+  check("a limit above the number of points returns the entry itself", Cat.thin(e, 5000) == e)
+  for _, want in ipairs({ 100, 40, 20 }) do
+    local th = Cat.thin(e, want)
+    check("at most " .. want .. " points: " .. want .. " kept", #th.points == want and th.npoints == want, #th.points)
+    check(want .. ": the end points stay", th.points[1].t == 0 and th.points[#th.points].t == 1)
+    check(want .. ": still in time order", (function() for k = 2, #th.points do if th.points[k].t <= th.points[k - 1].t then return false end end return true end)())
     local worst = 0
     for k = 0, 400 do worst = math.max(worst, math.abs(at(th.points, k / 400) - at(e.points, k / 400))) end
-    check(pct .. "%: the shape stays within 3% of the height", worst < 0.03, worst)
-    check(pct .. "%: hash and id stay (usage records still find it)", th.hash == e.hash and th.id == e.id)
+    check(want .. ": the shape stays within 3% of the height", worst < 0.03, worst)
+    check(want .. ": hash and id stay (usage records still find it)", th.hash == e.hash and th.id == e.id)
   end
   check("the entry in the catalogue is not touched", #Cat.get(id).points == #pts)
-  -- a curve with a step or a curved segment is taken as it is
   local cid = Cat.send{ source = "Thin Test", name = "steps", points = { { 0, 0, 1 }, { 0.3, 1, 0 }, { 0.6, 0.2, 0 }, { 1, 0.9, 0 } } }
   local ce = Cat.get(cid)
-  check("a curve with steps cannot be reduced", not Cat.canThin(ce) and Cat.thin(ce, 10) == ce)
-  -- take() applies the setting
-  Cat.setDetail(10)
-  check("take applies the Detail setting", #Cat.take(id).points == math.floor(#pts * 0.10 + 0.5), #Cat.take(id).points)
-  Cat.setDetail(100)
-  check("take at 100% gives everything", #Cat.take(id).points == #pts)
+  check("a curve with steps cannot be reduced", not Cat.canThin(ce) and Cat.thin(ce, 3) == ce)
+  Cat.setResolution(26)
+  check("take applies the Resolution setting", #Cat.take(id).points == 26, #Cat.take(id).points)
+  check("a curve with fewer points than the limit is taken whole", #Cat.take(cid).points == 4)
+  Cat.setResolution(0)
+  check("take with no limit gives everything", #Cat.take(id).points == #pts)
   check("take of nothing", Cat.take("nope") == nil)
 end
 

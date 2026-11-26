@@ -263,7 +263,7 @@ local function infoPanel(ctx, st, opts, shown, h)
   local x, y = R.ImGui_GetCursorScreenPos(ctx)
   R.ImGui_Dummy(ctx, 240, 120)
   local picE = e
-  if opts.browser and editing and e and Cat.thin then picE = Cat.thin(e, Cat.detail()) end    -- the picture shows what a tool takes (Detail below)
+  if opts.browser and editing and e and Cat.thin then picE = Cat.thin(e, Cat.resolution()) end    -- the picture shows what a tool takes (Resolution below)
   P.picture(R.ImGui_GetWindowDrawList(ctx), x, y, 240, 120, picE)
   if opts.browser and editing then
     -- Send To Script (the ReaCat window only; was just "Send" until 26 Nov 2026, renamed at his request because a second button, Send To Automation Item, follows): this curve becomes the newest, so that "Latest" in ReaMaskM, ReaShapeM, MinervaCL and any other tool takes it and nobody has to look for it
@@ -282,19 +282,21 @@ local function infoPanel(ctx, st, opts, shown, h)
     end
     R.ImGui_PopStyleColor(ctx, 3)
     R.ImGui_PopStyleVar(ctx)
-    -- Detail (26 Nov 2026, his request): how many of the points a tool is handed when it takes a curve. The catalogue keeps all of them; this only
-    -- reduces what is taken (Latest, the pickers, Send To Script). 100% = all. The picture above shows what a tool will get.
+    -- Resolution (26 Nov 2026, his request): the most points a tool is handed when it takes a curve, shown as a number of points. The catalogue keeps
+    -- all of them; this only reduces what is taken (Latest, the pickers, Send To Script). The right end of the slider = all the points of this curve
+    -- (stored as "no limit", so a bigger curve later is not cut by it). The picture above shows what a tool will get.
     if e and Cat.canThin and Cat.canThin(e) then
-      local pct = Cat.detail()
-      local te = Cat.thin(e, pct)
+      local n = #e.points
+      local cap = Cat.resolution()
+      local shownN = (cap == 0 or cap >= n) and n or cap
       R.ImGui_Dummy(ctx, 1, 2)
-      R.ImGui_TextColored(ctx, C.dim, string.format("Detail: tools take %d of %d points", #te.points, #e.points))
+      R.ImGui_TextColored(ctx, C.dim, string.format("Resolution: tools take %d of %d points", shownN, n))
       R.ImGui_SetNextItemWidth(ctx, 240)
-      local ch, v = R.ImGui_SliderInt(ctx, "##detail", pct, 1, 100, "%d%%")
-      if ch then Cat.setDetail(v) end
+      local ch, v = R.ImGui_SliderInt(ctx, "##resolution", shownN, 2, n, "%d")
+      if ch then Cat.setResolution(v >= n and 0 or v) end
     elseif e and e.kind == "curve" then
       R.ImGui_Dummy(ctx, 1, 2)
-      R.ImGui_TextColored(ctx, C.dim, "Detail: this curve is taken as it is")
+      R.ImGui_TextColored(ctx, C.dim, "Resolution: this curve is taken as it is")
     end
   end
   -- under the picture: what 0 and 1 stood for, and the Original range choice
